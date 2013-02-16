@@ -1,6 +1,13 @@
 class prlx
-  constructor: (@el, @options, fn) ->
+  constructor: (@el, @options, fn) ->    
     # Initialize & cache variables
+    for prop,val of @options
+      options = val.split " "
+      @start_at = options[0]
+      @end_at = options[1]
+      @increment_by = options[2]
+      @trigger_at = options[3]
+
     $window = $(window)
     $document = $(document)
 
@@ -13,7 +20,6 @@ class prlx
     @el_top             =   @el.offset().top
     @el_height          =   @el.height()
     @running            =   false
-    @movers             =   []
 
     # if user resizes window, cache the new window height.
     $window.on 'resize', =>
@@ -25,40 +31,16 @@ class prlx
       @scroll_bottom = @scroll_top + @window_height
       @requestFrameIfNecessary()
 
-    for prop,val of @options
-      @movers.push new @Mover(prop,val)
-
     console.log 'movers is', @movers
 
   requestFrameIfNecessary: =>
     if not @running
       requestAnimationFrame(@move)
     @running = true
-
-  # move: (prop,val,increment_by) =>
-  #   @el.trigger 'prlx:readyToMove'
-  #   @running = false
-
-  #   if @findPositionOfElement() is @trigger_at
-  #     thing
   
-  Mover: (prop,val) ->
-    options = val.split " "
-    
-    start_at = options[0]
-    end_at = options[1]
-    increment_by = options[2]
-    trigger_at = options[3]
-
-    # somehow, mover instances have to be aware of the scrolling and whether or not they should animate.
-    # this might mean that all movement code should be part of the Mover instance. Which makes sense. this would
-    # also mean that each mover is responsible for requesting its own animation frame. this might be a perf issue
-
-
-
-
-    
-
+  move: =>
+    console.log @findPositionOfElement()
+    @running = false
   
   isElFullyVisible: =>
     @el.trigger 'prlx:fullyVisible'
@@ -70,7 +52,6 @@ class prlx
 
   findPositionOfElement: => (@el_top - @scroll_top + @el_height) / (@scroll_bottom - @scroll_top + @el_height) # returns % of element on screen
   findPositionOfPageScrolled: => @scroll_top / (@document_height - @window_height)
-
   isFunction: (obj) -> return !!(obj and obj.constructor and obj.call and obj.apply) # from _
   isObject: (obj) -> return obj is Object(obj) # from _
 

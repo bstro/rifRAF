@@ -18,8 +18,19 @@
 
       this.isElFullyVisible = __bind(this.isElFullyVisible, this);
 
+      this.move = __bind(this.move, this);
+
       this.requestFrameIfNecessary = __bind(this.requestFrameIfNecessary, this);
 
+      _ref = this.options;
+      for (prop in _ref) {
+        val = _ref[prop];
+        options = val.split(" ");
+        this.start_at = options[0];
+        this.end_at = options[1];
+        this.increment_by = options[2];
+        this.trigger_at = options[3];
+      }
       $window = $(window);
       $document = $(document);
       this.vendor_prefixes = ["-webkit-", "-moz-", "-ms-", "-o-"];
@@ -31,7 +42,6 @@
       this.el_top = this.el.offset().top;
       this.el_height = this.el.height();
       this.running = false;
-      this.movers = [];
       $window.on('resize', function() {
         return _this.window_height = $window.height();
       });
@@ -40,11 +50,6 @@
         _this.scroll_bottom = _this.scroll_top + _this.window_height;
         return _this.requestFrameIfNecessary();
       });
-      _ref = this.options;
-      for (prop in _ref) {
-        val = _ref[prop];
-        this.movers.push(new this.Mover(prop, val));
-      }
       console.log('movers is', this.movers);
     }
 
@@ -55,13 +60,9 @@
       return this.running = true;
     };
 
-    prlx.prototype.Mover = function(prop, val) {
-      var end_at, increment_by, options, start_at, trigger_at;
-      options = val.split(" ");
-      start_at = options[0];
-      end_at = options[1];
-      increment_by = options[2];
-      return trigger_at = options[3];
+    prlx.prototype.move = function() {
+      console.log(this.findPositionOfElement());
+      return this.running = false;
     };
 
     prlx.prototype.isElFullyVisible = function() {

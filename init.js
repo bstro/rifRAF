@@ -1,8 +1,11 @@
 $(function() {
 
   $('#box1').prlx({
-   "margin-top": "0px 150px 1px 50%", // start at, end at, increment by, trigger at on-screen percentage
-   "opacity": "0.01 0 1 0%"
+   "margin-top": "150px 1px 50%" // limit, increment by, trigger at
+  });
+
+  $('#box2').prlx({
+    "opacity": "1 0.01 0%" // limit, increment by, trigger at
   });
 
   // moar:

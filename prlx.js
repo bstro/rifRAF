@@ -4,9 +4,28 @@
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   prlx = (function() {
+    var $document, $window, document_height, prefixed_elements, running, scroll_bottom, scroll_top, vendor_prefixes, window_height;
+
+    $window = $(window);
+
+    $document = $(document);
+
+    vendor_prefixes = ["-webkit-", "-moz-", "-ms-", "-o-"];
+
+    prefixed_elements = ["border-radius", "transform", "perspective", "perspective-origin", "box-shadow", "background-size"];
+
+    document_height = $document.height();
+
+    window_height = $window.height();
+
+    scroll_top = $window.scrollTop();
+
+    scroll_bottom = scroll_top + prlx.window_height;
+
+    running = false;
 
     function prlx(el, options, fn) {
-      var $document, $window, prop, val, _ref,
+      var increment_by, limit, prop, trigger_at, val, _ref,
         _this = this;
       this.el = el;
       this.options = options;
@@ -22,35 +41,25 @@
 
       this.requestFrameIfNecessary = __bind(this.requestFrameIfNecessary, this);
 
+      this.el_top = this.el.offset().top;
+      this.el_height = this.el.height();
       _ref = this.options;
       for (prop in _ref) {
         val = _ref[prop];
-        options = val.split(" ");
-        this.start_at = options[0];
-        this.end_at = options[1];
-        this.increment_by = options[2];
-        this.trigger_at = options[3];
+        options = val.match(/\S+/g);
+        limit = options[0];
+        increment_by = options[1];
+        trigger_at = options[2];
       }
-      $window = $(window);
-      $document = $(document);
-      this.vendor_prefixes = ["-webkit-", "-moz-", "-ms-", "-o-"];
-      this.prefixed_elements = ["border-radius", "transform", "perspective", "perspective-origin", "box-shadow", "background-size"];
-      this.document_height = $document.height();
-      this.window_height = $window.height();
-      this.scroll_top = $window.scrollTop();
-      this.scroll_bottom = this.scroll_top + this.window_height;
-      this.el_top = this.el.offset().top;
-      this.el_height = this.el.height();
-      this.running = false;
+      console.log(options);
       $window.on('resize', function() {
         return _this.window_height = $window.height();
       });
       $window.on('scroll', function() {
-        _this.scroll_top = $window.scrollTop();
-        _this.scroll_bottom = _this.scroll_top + _this.window_height;
+        scroll_top = $window.scrollTop();
+        scroll_bottom = scroll_top + window_height;
         return _this.requestFrameIfNecessary();
       });
-      console.log('movers is', this.movers);
     }
 
     prlx.prototype.requestFrameIfNecessary = function() {
@@ -82,11 +91,11 @@
     };
 
     prlx.prototype.findPositionOfElement = function() {
-      return (this.el_top - this.scroll_top + this.el_height) / (this.scroll_bottom - this.scroll_top + this.el_height);
+      return (this.el_top - scroll_top + this.el_height) / (scroll_bottom - scroll_top + this.el_height);
     };
 
     prlx.prototype.findPositionOfPageScrolled = function() {
-      return this.scroll_top / (this.document_height - this.window_height);
+      return scroll_top / (document_height - window_height);
     };
 
     prlx.prototype.isFunction = function(obj) {

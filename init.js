@@ -1,7 +1,8 @@
 $(function() {
 
   $('#box1').prlx({
-   "margin-top": "150px 1px 50%" // limit, increment by, trigger at
+   "margin-top": "150px 1px 50%", // limit, increment, trigger
+   "margin-left": "3000px 1px onscreen"
   });
 
   $('#box2').prlx({

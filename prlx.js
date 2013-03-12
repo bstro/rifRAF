@@ -31,7 +31,13 @@
       for (property in options) {
         val = options[property];
         args = val.match(/\S+/g);
-        new Actor(this.el, property, args[0], args[1], args[2]);
+        new Actor({
+          el: this.el,
+          property: property,
+          limit: args[0],
+          increment: args[1],
+          trigger: args[2]
+        });
       }
       $window.on('resize', function() {
         return window_height = $window.height();
@@ -40,7 +46,6 @@
         _this.event = event;
         scroll_top = $window.scrollTop();
         scroll_bottom = scroll_top + window_height;
-        console.log(_this.positionOfElement());
         if (!_this.running) {
           requestAnimationFrame(function() {
             var _ref;
@@ -78,15 +83,9 @@
         };
       })());
 
-      Actor.test = (function() {})();
-
-      function Actor(el, property, limit, increment, trigger) {
+      function Actor(options) {
         var actors;
-        this.el = el;
-        this.property = property;
-        this.limit = limit;
-        this.increment = increment;
-        this.trigger = trigger;
+        this.options = options;
         actors = Actor.actors;
         actors.add(this);
       }

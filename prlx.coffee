@@ -1,5 +1,5 @@
 class Prlx
-  # Initialize & cache private instance(?) variables
+  # Initialize & cache private class(?) variables
   $window = $(window)
   $document = $(document)
 
@@ -20,7 +20,12 @@ class Prlx
     # Parse options object
     for property,val of options
       args = val.match /\S+/g
-      new Actor @el, property, args[0], args[1], args[2]
+      new Actor
+        el: @el
+        property: property
+        limit: args[0]
+        increment: args[1]
+        trigger: args[2]
 
     $window.on 'resize', -> window_height = $window.height()
 
@@ -29,14 +34,14 @@ class Prlx
       scroll_top = $window.scrollTop()
       scroll_bottom = scroll_top + window_height
 
-      console.log @positionOfElement()
+      # console.log @positionOfElement()
 
       if not @running
         requestAnimationFrame => # => @ ~ prlx instance
           while @stack?.length
             @stack.pop()()
           @running = false
-          
+
       @running = true
 
   class Actor
@@ -48,9 +53,7 @@ class Prlx
         actors
       pop: -> actors.pop()
 
-    @test = do => # @ ~ Actor class
-
-    constructor: (@el, @property, @limit, @increment, @trigger) -> # @ ~ Actor instance
+    constructor: (@options) -> # @ ~ Actor instance
       actors = Actor.actors # alias to class object
       actors.add @
 

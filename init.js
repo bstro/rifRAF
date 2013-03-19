@@ -1,12 +1,15 @@
 $(function() {
-  $('#box1').prlx({
-   "margin-top": "150px 1px 50%", // limit, increment, trigger
-   "margin-left": "3000px 1px onscreen"
+  $('#box2').prlx({
+   "margin-left": "450px 2 50%", // maximum_distance, acceleration rate, trigger
+   // "margin-left": "3000px 2 onscreen"
+   // "transform": …
+   // "rotate": …
+   // "scale": …
   });
 
-  $('#box2').prlx({
-    "opacity": "1 0.01 0%" // limit, increment by, trigger at
-  });
+  // $('#box2').prlx({
+  //   "opacity": "1 0.01 0%" // limit, increment by, trigger at
+  // });
 
   // $("#box3").prlx({
   //   "rotate": function(distance,path) {

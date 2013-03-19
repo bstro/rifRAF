@@ -3,54 +3,82 @@
   var Prlx;
 
   Prlx = (function() {
-    var $document, $window, Actor, document_height, prefixed_elements, scroll_bottom, scroll_top, vendor_prefixes, window_height;
+    var Actor, prefixed_properties, vendor_prefixes;
 
-    $window = $(window);
+    Actor = (function() {
 
-    $document = $(document);
+      function Actor(options, instance) {
+        var _this = this;
+        this.options = options;
+        this.instance = instance;
+        this.instance.el.on('test', function() {
+          return _this.instance.queue.push(_this.options.partial_adjustment(_this.test()));
+        });
+      }
+
+      Actor.prototype.test = function() {
+        var adjustment, current_el_position, new_el_position, old_position;
+        current_el_position = this.instance.positionOfElement();
+        if (current_el_position !== old_position && this.instance.isElPartiallyVisible()) {
+          new_el_position = Math.min(Math.pow(current_el_position, this.options.acceleration_rate), 1);
+          adjustment = this.options.maximum_distance * new_el_position;
+          console.log(this.options);
+        }
+        old_position = current_el_position;
+        return adjustment;
+      };
+
+      return Actor;
+
+    })();
 
     vendor_prefixes = ["-webkit-", "-moz-", "-ms-", "-o-"];
 
-    prefixed_elements = ["border-radius", "transform", "perspective", "perspective-origin", "box-shadow", "background-size"];
-
-    document_height = $document.height();
-
-    window_height = $window.height();
-
-    scroll_top = $window.scrollTop();
-
-    scroll_bottom = scroll_top + Prlx.window_height;
+    prefixed_properties = ["border-radius", "transform", "perspective", "perspective-origin", "box-shadow", "background-size"];
 
     function Prlx(el, options, fn) {
-      var args, property, val,
+      var args, number, property, val,
         _this = this;
       this.el = el;
+      this.options = options;
+      this.window = $(window);
+      this.document = $(document);
+      this.document_height = this.document.height();
+      this.window_height = this.window.height();
+      this.scroll_top = this.window.scrollTop();
+      this.scroll_bottom = this.scroll_top + this.window_height;
       this.el_top = this.el.offset().top;
       this.el_height = this.el.height();
       this.running = false;
+      this.queue = [];
+      this.actors = [];
       for (property in options) {
         val = options[property];
         args = val.match(/\S+/g);
-        new Actor({
+        number = args[0].match(/(\d+)([a-zA-Z]+)/i);
+        console.log(number);
+        this.actors.push(new Actor({
           el: this.el,
           property: property,
-          limit: args[0],
-          increment: args[1],
-          trigger: args[2]
-        });
+          maximum_distance: number[1],
+          unit: number[2],
+          acceleration_rate: args[1],
+          trigger: args[2],
+          partial_adjustment: this.computeAdjustment(property, number[2])
+        }, this));
       }
-      $window.on('resize', function() {
-        return window_height = $window.height();
+      this.window.on('resize', function() {
+        return _this.window_height = _this.window.height();
       });
-      $window.on('scroll', function(event) {
+      this.window.on('scroll', function(event) {
         _this.event = event;
-        scroll_top = $window.scrollTop();
-        scroll_bottom = scroll_top + window_height;
+        _this.scroll_top = _this.window.scrollTop();
+        _this.scroll_bottom = _this.scroll_top + _this.window_height;
+        _this.el.trigger('test');
         if (!_this.running) {
           requestAnimationFrame(function() {
-            var _ref;
-            while ((_ref = _this.stack) != null ? _ref.length : void 0) {
-              _this.stack.pop()();
+            if (_this.queue.length) {
+              _this.queue.pop();
             }
             return _this.running = false;
           });
@@ -59,55 +87,38 @@
       });
     }
 
-    Actor = (function() {
+    Prlx.prototype.computeAdjustment = function(property, unit) {
       var _this = this;
-
-      Actor.actors || (Actor.actors = (function() {
-        var actors;
-        actors = [];
-        return {
-          get: function() {
-            return actors;
-          },
-          add: function() {
-            var n, _i, _len;
-            for (_i = 0, _len = arguments.length; _i < _len; _i++) {
-              n = arguments[_i];
-              actors.push(n);
-            }
-            return actors;
-          },
-          pop: function() {
-            return actors.pop();
+      return function(adjustment) {
+        if (prefixed_properties.indexOf(property) >= 0) {
+          if (property === 'rotate' || property === 'skew' || property === 'rotate') {
+            return _this.el.css({
+              "transform": "" + property + "(" + adjustment + (unit(unit ? void 0 : 'px')) + ")",
+              "-moz-transform": "" + property + "(" + adjustment + (unit(unit ? void 0 : 'px')) + ")",
+              "-webkit-transform": "" + property + "(" + adjustment + (unit(unit ? void 0 : 'px')) + ")",
+              "-ms-transform": "" + property + "(" + adjustment + (unit(unit ? void 0 : 'px')) + ")"
+            });
+          } else {
+            return _this.el.css({
+              "transform": adjustment,
+              "-moz-transform": adjustment,
+              "-webkit-transform": adjustment,
+              "-ms-transform": adjustment
+            });
           }
-        };
-      })());
-
-      function Actor(options) {
-        var actors;
-        this.options = options;
-        actors = Actor.actors;
-        actors.add(this);
-      }
-
-      Actor.prototype.move = function() {
-        var _this = this;
-        return function() {
-          return _this.el.css(_this.property, (_this.el.css(_this.property)) + _this.increment);
-        };
+        } else {
+          return _this.el.css(property, "" + adjustment + "px");
+        }
       };
-
-      return Actor;
-
-    }).call(this);
+    };
 
     Prlx.prototype.positionOfElement = function() {
-      return (this.el_top - scroll_top + this.el_height) / (scroll_bottom - scroll_top + this.el_height);
+      return (this.el_top - this.scroll_top + this.el_height) / (this.scroll_bottom - this.scroll_top + this.el_height);
     };
 
     Prlx.prototype.isElFullyVisible = function() {
       var _ref;
-      if (((scroll_bottom - this.el_height) > (_ref = this.el_top) && _ref > scroll_top)) {
+      if (((this.scroll_bottom - this.el_height) > (_ref = this.el_top) && _ref > this.scroll_top)) {
         this.el.trigger('prlx:fullyVisible');
         return true;
       }
@@ -115,14 +126,14 @@
 
     Prlx.prototype.isElPartiallyVisible = function() {
       var _ref;
-      if ((scroll_bottom > (_ref = this.el_top) && _ref > (scroll_top - this.el_height))) {
+      if ((this.scroll_bottom > (_ref = this.el_top) && _ref > (this.scroll_top - this.el_height))) {
         this.el.trigger('prlx:partiallyVisible');
         return true;
       }
     };
 
     Prlx.prototype.positionOfPageScrolled = function() {
-      return scroll_top / (document_height - window_height);
+      return this.scroll_top / (this.document_height - this.window_height);
     };
 
     Prlx.prototype.isFunction = function(obj) {
@@ -135,7 +146,7 @@
 
     return Prlx;
 
-  }).call(this);
+  })();
 
   (function($) {
     return $.fn.prlx = function(options, fn) {

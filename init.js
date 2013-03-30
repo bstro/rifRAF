@@ -1,15 +1,9 @@
 $(function() {
-  $('#box2').prlx({
-   "margin-left": "450px 2 50%", // maximum_distance, acceleration rate, trigger
-   // "margin-left": "3000px 2 onscreen"
-   // "transform": …
-   // "rotate": …
-   // "scale": …
-  });
 
-  // $('#box2').prlx({
-  //   "opacity": "1 0.01 0%" // limit, increment by, trigger at
-  // });
+  $('.box').prlx({
+    "rotate": "120deg 2 onscreen"
+    // "rotate": "5deg 1 onscreen #box2" // specifying an element triggers box1's animation only when box2 is onscreen (or 25% or 54% or w/e)
+  });
 
   // $("#box3").prlx({
   //   "rotate": function(distance,path) {

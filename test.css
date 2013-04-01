@@ -3,7 +3,7 @@ html, body { height: 3000px;}
 #boxes {
   /*position: fixed;*/
   top: 0;
-  margin-top: 800px;
+  margin-top: 500px;
 }
 
 .box {
@@ -13,5 +13,5 @@ html, body { height: 3000px;}
   background: red;
   margin-right: 50px;
   float: left;
-  /*position: fixed;*/
+  /*transition: all .05s linear;*/
 }

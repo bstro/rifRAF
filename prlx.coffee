@@ -1,105 +1,107 @@
-define ["jquery"], ($) ->
-  class Actor # just a class used mainly for book-keeping and event bindings
-    constructor: (options, prlx) ->
-      _.extend @, options
+# define ["jquery"], ($) ->
+class Actor
+  @actors ||= {}
+  @_id = 0
 
-      $(window).on 'resize ready', =>
-        @el_top = $(@el).offset().top
-        @make_adjustment(prlx.test @)
+  constructor: (el, options) ->
+    @actions ||= []
+    Actor._id++
 
-  class Prlx
-    prefix = do -> # http://davidwalsh.name/vendor-prefix
-      styles = window.getComputedStyle(document.documentElement, '')
-      pre = (Array.prototype.slice.call(styles).join('').match(/-(moz|webkit|ms)-/) or (styles.OLink is '' and ['', 'o']))[1]
-      "-#{pre}-"
+    if Actor.actors[el.prlx_id]
+      @parseOptions options, Actor.actors[el.prlx_id].actions
+    else
+      Actor.actors["c#{Actor._id}"] = @
+      el.prlx_id = "c#{Actor._id}"
+      @parseOptions options, @actions
 
-    prefixed_properties   =   {
-                               "border-radius": true,
-                               "transform": true,
-                               "perspective": true,
-                               "perspective-origin": true,
-                               "box-shadow": true,
-                               "background-size": true
-                              }
-    document_height       =   $(document).height()
-    window_height         =   $(window).height()
-    scroll_top            =   $(window).scrollTop()
-    scroll_bottom         =   scroll_top + window_height
+    console.log Actor.actors
 
-    constructor: (elements, options, fn) ->
-      @window               =   $(window)
-      actors                =   []
-      running               =   false
+  parseOptions: (options, collection) ->
+    for property,val of options
+      args = val.match /\S+/g
+      start = args[0].match /-?\d+(\.\d+)?/g # matches signed decimals only.
+      stop = args[1].match /-?\d+(\.\d+)?/g
+      unit = args[0].match /[a-z]+/ig
 
-      # Parse options object
-      for property,val of options
-        args = val.match /\S+/g
-        start = args[0].match /-?\d+(\.\d+)?/g # matches signed decimals only
-        end = args[1].match /-?\d+(\.\d+)?/g
-        unit = args[0].match /[a-z]+/ig
+      collection.push
+        'property': property
+        'start'   : start?[0]
+        'stop'    : stop?[0]
+        'unit'    : unit?[0]
 
-        for el in elements
-          actors.push new Actor
-            el: $(el)
-            el_top: $(el).offset().top
-            el_height: $(el).height()
-            property: property
-            start: start
-            end: end
-            unit: unit || undefined
-            acceleration: args[1]
-            trigger: args[2]
-            make_adjustment: @computeAdjustment(property, unit, $(el))
-          , @
+class Prlx
+  prefix = do -> # http://davidwalsh.name/vendor-prefix
+    styles = window.getComputedStyle(document.documentElement, '')
+    pre = (Array.prototype.slice.call(styles).join('').match(/-(moz|webkit|ms)-/) or (styles.OLink is '' and ['', 'o']))[1]
+    "-#{pre}-"
 
-      @window.on 'resize', => window_height = @window.height()
+  prefixed_properties   =   {
+                             "border-radius": true,
+                             "transform": true,
+                             "perspective": true,
+                             "perspective-origin": true,
+                             "box-shadow": true,
+                             "background-size": true
+                            }
+  document_height       =   $(document).height()
+  window_height         =   $(window).height()
+  scroll_top            =   $(window).scrollTop()
+  scroll_bottom         =   scroll_top + window_height
 
-      # if user scrolls, cache the new scrollY value for use later and see if a frame should be rendered.
-      @window.on 'scroll', (event) =>
-        scroll_top = @window.scrollTop()
-        scroll_bottom = scroll_top + window_height
+  constructor: (elements, options, fn) ->
+    @window               =   $(window)
+    actors                =   []
+    running               =   false
 
-        if not running
-          requestAnimationFrame => # => @ ~ prlx instance
-            actor.make_adjustment(@test actor) for actor in actors
-            running = false
-        running = true
+    elements.each -> new Actor @, options
 
-    test: (actor) =>
-      current_el_position = (@positionOfElement.call actor)
+    @window.on 'resize', => window_height = @window.height()
 
-      if current_el_position isnt old_position and @isElPartiallyVisible.call actor
-        # new_el_position = Math.min(Math.pow(current_el_position,actor.acceleration_rate), 1)
-        # new_el_position = current_el_position
-        # new_el_position = Math.min(current_el_position*actor.start,current_el_position*actor.end)
-        # adjustment = actor.end*(new_el_position)
-      else
-        return false
+    @window.on 'scroll', (event) =>
+      scroll_top = @window.scrollTop()
+      scroll_bottom = scroll_top + window_height
 
-      old_position = current_el_position
+      if not running
+        requestAnimationFrame => # => @ ~ prlx instance
+          @make_adjustment(@test actor) for actor in Actor.actors
+          running = false
+      running = true
 
-      # return adjustment
+  test: (actor) =>
+    current_el_position = (@yPositionOfElement.call actor)
 
-    computeAdjustment: (property, unit, el) ->
-      (adjustment) ->
-        if adjustment
-          if prefixed_properties[property]
-            el.css "#{prefix}property", adjustment
-          else if property is 'rotate' or property is 'skew' or property is 'scale'
-            el.css "#{prefix}transform", "#{property}(#{adjustment}#{unit || ''})"
-          else
-            el.css(property, "#{adjustment}#{unit}")
+    delta = actor.start - actor.end
 
-    positionOfElement: ->
-      (@el_top - scroll_top + @el_height) / (scroll_bottom - scroll_top + @el_height) # returns % of element on screen
+    if current_el_position isnt old_position # and @isElPartiallyVisible.call actor
+      # new_el_position = Math.min(Math.pow(current_el_position,actor.acceleration_rate), 1)
+      adjustment = current_el_position*delta
+    else
+      return false
 
-    isElFullyVisible: ->
-      ((scroll_bottom - @el_height) > @el_top > scroll_top)
+    old_position = current_el_position
 
-    isElPartiallyVisible: ->
-      (scroll_bottom > @el_top > (scroll_top - @el_height))
+    return adjustment
 
-  (($) ->
-    $.fn.prlx = (options, fn) ->
-      new Prlx($(this),options)
-  )(jQuery)
+  computeAdjustment: (property, unit, el) ->
+    (adjustment) ->
+      if adjustment
+        if prefixed_properties[property]
+          el.css "#{prefix}property", adjustment
+        else if property is 'rotate' or property is 'skew' or property is 'scale'
+          el.css "#{prefix}transform", "#{property}(#{adjustment}#{unit || ''})"
+        else
+          el.css(property, "#{adjustment}#{unit}")
+
+  yPositionOfElement: ->
+    (@el_top - scroll_top + @el_height) / (scroll_bottom - scroll_top + @el_height) # returns % of element on screen
+
+  isElFullyVisible: ->
+    ((scroll_bottom - @el_height) > @el_top > scroll_top)
+
+  isElPartiallyVisible: ->
+    (scroll_bottom > @el_top > (scroll_top - @el_height))
+
+(($) ->
+  $.fn.prlx = (options) ->
+    new Prlx($(this),options)
+)(jQuery)

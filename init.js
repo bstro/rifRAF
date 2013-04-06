@@ -1,14 +1,18 @@
 $(function() {
 
   $('.box').prlx({
-    "scale": "1.5 1 onscreen",
-    "rotate": "120deg 1 onscreen"
+    "scale": "3 1",
+    "rotate": "120deg 360deg"
     // "rotate": "5deg 1 onscreen #box2" // specifying an element triggers box1's animation only when box2 is onscreen (or 25% or 54% or w/e)
   });
 
   $('#box1').prlx({
-    "margin-left": "120px 1 onscreen"
-  })
+    "margin-left": "0px -150px"
+  });
+
+  // $('#box1').prlx({
+  //   "margin-left": "120px 1 onscreen"
+  // })
 
   // $("#box1").prlx('fade');
 

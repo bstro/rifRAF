@@ -7,7 +7,7 @@ $(function() {
   });
 
   $('#box1').prlx({
-    "margin-left": "0px -150px"
+    "margin-top": "0px -150px"
   });
 
   // $('#box1').prlx({

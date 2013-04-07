@@ -3,46 +3,52 @@ class Actor
   @actors ||= {}
   @_id = 0
 
-  constructor: (el, options) ->
-    @actions ||= []
+  constructor: (@el, options) ->
     Actor._id++
+    @actions ||= []
+    @attributes ||= {}
 
-    if Actor.actors[el.prlx_id]
-      @parseOptions options, Actor.actors[el.prlx_id].actions
-    else
+    @attributes['el_height'] = @el.height()
+    @attributes['el_top'] = @el.offset().top
+
+    parseOptions = (options, collection) ->
+      for property,val of options
+        args = val.match /\S+/g
+        start = args[0].match /-?\d+(\.\d+)?/g # matches signed decimals
+        stop = args[1].match /-?\d+(\.\d+)?/g # matches signed decimals
+        unit = args[0].match /[a-z]+/ig # matches consecutive letters
+
+        a = {}
+        a['property'] = property if property
+        a['start']    = start[0] if start
+        a['stop']     = stop[0] if stop
+        a['unit']     = unit[0] if unit
+
+        collection.push a
+
+    if Actor.actors[@el[0].prlx_id] # If actor already exists for this element
+      parseOptions options, Actor.actors[@el[0].prlx_id].actions
+
+    else # If this is a new actor
       Actor.actors["c#{Actor._id}"] = @
-      el.prlx_id = "c#{Actor._id}"
-      @parseOptions options, @actions
+      @el[0].prlx_id = "c#{Actor._id}"
+      parseOptions options, @actions
 
-    console.log Actor.actors
+class Director
+  @getInstance: (elements, options, fn) ->
+    if @_instance
+      elements.each -> new Actor $(@), options
+    else
+      @_instance = new @(arguments...)
 
-  parseOptions: (options, collection) ->
-    for property,val of options
-      args = val.match /\S+/g
-      start = args[0].match /-?\d+(\.\d+)?/g # matches signed decimals only.
-      stop = args[1].match /-?\d+(\.\d+)?/g
-      unit = args[0].match /[a-z]+/ig
-
-      collection.push
-        'property': property
-        'start'   : start?[0]
-        'stop'    : stop?[0]
-        'unit'    : unit?[0]
-
-class Prlx
-  prefix = do -> # http://davidwalsh.name/vendor-prefix
+class Prlx extends Director
+  prefix = do -> # modified -> http://davidwalsh.name/vendor-prefix
     styles = window.getComputedStyle(document.documentElement, '')
     pre = (Array.prototype.slice.call(styles).join('').match(/-(moz|webkit|ms)-/) or (styles.OLink is '' and ['', 'o']))[1]
     "-#{pre}-"
 
-  prefixed_properties   =   {
-                             "border-radius": true,
-                             "transform": true,
-                             "perspective": true,
-                             "perspective-origin": true,
-                             "box-shadow": true,
-                             "background-size": true
-                            }
+  prefixed_properties   =   {"border-radius": true, "transform": true, "perspective": true, "perspective-origin": true, "box-shadow": true, "background-size": true }
+  modifiers             =   {"matrix": "transform", "translate": "transform", "translateX": "transform", "translateY": "transform", "scale": "transform", "scaleX": "transform", "scaleY": "transform", "rotate": "transform", "skewX": "transform", "skewY": "transform", "matrix3d": "transform", "translate3d": "transform", "translateZ": "transform", "scale3d": "transform", "scaleZ": "transform", "rotate3d": "transform", "rotateX": "transform", "rotateY": "transform", "rotateZ": "transform", "perspective": "transform"}
   document_height       =   $(document).height()
   window_height         =   $(window).height()
   scroll_top            =   $(window).scrollTop()
@@ -50,47 +56,41 @@ class Prlx
 
   constructor: (elements, options, fn) ->
     @window               =   $(window)
-    actors                =   []
     running               =   false
 
-    elements.each -> new Actor @, options
+    elements.each -> new Actor $(@), options
 
     @window.on 'resize', => window_height = @window.height()
-
     @window.on 'scroll', (event) =>
       scroll_top = @window.scrollTop()
       scroll_bottom = scroll_top + window_height
 
       if not running
         requestAnimationFrame => # => @ ~ prlx instance
-          @make_adjustment(@test actor) for actor in Actor.actors
+          @render(actor.el, @test(actor)) for k,actor of Actor.actors
           running = false
       running = true
 
-  test: (actor) =>
-    current_el_position = (@yPositionOfElement.call actor)
+  test: (actor) ->
+    current_el_position = @yPositionOfElement.call actor.attributes
 
-    delta = actor.start - actor.end
+    adjustments = {}
 
-    if current_el_position isnt old_position # and @isElPartiallyVisible.call actor
-      # new_el_position = Math.min(Math.pow(current_el_position,actor.acceleration_rate), 1)
-      adjustment = current_el_position*delta
-    else
-      return false
+    for k,action of actor.actions
+      delta = action.start - action.stop
+      adjustment = current_el_position * delta
 
-    old_position = current_el_position
-
-    return adjustment
-
-  computeAdjustment: (property, unit, el) ->
-    (adjustment) ->
-      if adjustment
-        if prefixed_properties[property]
-          el.css "#{prefix}property", adjustment
-        else if property is 'rotate' or property is 'skew' or property is 'scale'
-          el.css "#{prefix}transform", "#{property}(#{adjustment}#{unit || ''})"
+      if modifiers[action.property]
+        if adjustments[modifiers[action.property]]
+          adjustments[modifiers[action.property]] += "#{action.property}(#{adjustment}#{action.unit or ''}) "
         else
-          el.css(property, "#{adjustment}#{unit}")
+          adjustments[modifiers[action.property]] = "#{action.property}(#{adjustment}#{action.unit or ''}) "
+      else
+        adjustments[action.property] = "#{adjustment}#{action.unit if action.unit}"
+
+    return adjustments
+
+  render: (el, adjustments) -> el.css adjustments
 
   yPositionOfElement: ->
     (@el_top - scroll_top + @el_height) / (scroll_bottom - scroll_top + @el_height) # returns % of element on screen
@@ -103,5 +103,5 @@ class Prlx
 
 (($) ->
   $.fn.prlx = (options) ->
-    new Prlx($(this),options)
+    Prlx.getInstance($(this),options)
 )(jQuery)

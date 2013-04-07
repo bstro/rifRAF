@@ -1,8 +1,14 @@
 html, body { height: 3000px;}
 
+#container, #content {
+  margin: 0 auto;
+}
+
 #boxes {
   /*position: fixed;*/
-  top: 0;
+  /*top: 0;*/
+  width: 540px;
+  margin: 0 auto;
   margin-top: 500px;
 }
 

@@ -45,7 +45,13 @@ class Prlx extends Director
   prefix = do -> # modified -> http://davidwalsh.name/vendor-prefix
     styles = window.getComputedStyle(document.documentElement, '')
     pre = (Array.prototype.slice.call(styles).join('').match(/-(moz|webkit|ms)-/) or (styles.OLink is '' and ['', 'o']))[1]
-    "-#{pre}-"
+    return pre
+
+  unless window.requestAnimationFrame
+    window.requestAnimationFrame = window[prefix+"RequestAnimationFrame"]
+    window.cancelAnimationFrame = window[prefix+"CancelAnimationFrame"] || window[prefix+"CancelRequestAnimationFrame"]
+
+  console.log 'prefix is', prefix
 
   prefixed_properties   =   {"border-radius": true, "transform": true, "perspective": true, "perspective-origin": true, "box-shadow": true, "background-size": true }
   modifiers             =   {"matrix": "transform", "translate": "transform", "translateX": "transform", "translateY": "transform", "scale": "transform", "scaleX": "transform", "scaleY": "transform", "rotate": "transform", "skewX": "transform", "skewY": "transform", "matrix3d": "transform", "translate3d": "transform", "translateZ": "transform", "scale3d": "transform", "scaleZ": "transform", "rotate3d": "transform", "rotateX": "transform", "rotateY": "transform", "rotateZ": "transform", "perspective": "transform"}

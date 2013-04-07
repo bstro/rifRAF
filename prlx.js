@@ -88,8 +88,15 @@
       var pre, styles;
       styles = window.getComputedStyle(document.documentElement, '');
       pre = (Array.prototype.slice.call(styles).join('').match(/-(moz|webkit|ms)-/) || (styles.OLink === '' && ['', 'o']))[1];
-      return "-" + pre + "-";
+      return pre;
     })();
+
+    if (!window.requestAnimationFrame) {
+      window.requestAnimationFrame = window[prefix + "RequestAnimationFrame"];
+      window.cancelAnimationFrame = window[prefix + "CancelAnimationFrame"] || window[prefix + "CancelRequestAnimationFrame"];
+    }
+
+    console.log('prefix is', prefix);
 
     prefixed_properties = {
       "border-radius": true,

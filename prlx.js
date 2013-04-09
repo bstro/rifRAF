@@ -96,8 +96,6 @@
       window.cancelAnimationFrame = window[prefix + "CancelAnimationFrame"] || window[prefix + "CancelRequestAnimationFrame"];
     }
 
-    console.log('prefix is', prefix);
-
     prefixed_properties = {
       "border-radius": true,
       "transform": true,
@@ -168,7 +166,7 @@
     }
 
     Prlx.prototype.test = function(actor) {
-      var action, adjustment, adjustments, current_el_position, delta, k, _ref;
+      var action, adjustment, adjustments, current_el_position, delta, k, property, _ref;
       current_el_position = this.yPositionOfElement.call(actor.attributes);
       adjustments = {};
       _ref = actor.actions;
@@ -176,12 +174,9 @@
         action = _ref[k];
         delta = action.start - action.stop;
         adjustment = current_el_position * delta;
-        if (modifiers[action.property]) {
-          if (adjustments[modifiers[action.property]]) {
-            adjustments[modifiers[action.property]] += "" + action.property + "(" + adjustment + (action.unit || '') + ") ";
-          } else {
-            adjustments[modifiers[action.property]] = "" + action.property + "(" + adjustment + (action.unit || '') + ") ";
-          }
+        if ((property = modifiers[action.property])) {
+          adjustments[property] || (adjustments[property] = "");
+          adjustments[property] += "" + action.property + "(" + adjustment + (action.unit || '') + ") ";
         } else {
           adjustments[action.property] = "" + adjustment + (action.unit ? action.unit : void 0);
         }

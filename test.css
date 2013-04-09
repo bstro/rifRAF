@@ -2,13 +2,14 @@ html, body { height: 3000px;}
 
 #container, #content {
   margin: 0 auto;
+  position: relative;
 }
 
-#boxes {
-  /*position: fixed;*/
-  /*top: 0;*/
+.boxes {
+  position: absolute;
+  left: 50%;
   width: 540px;
-  margin: 0 auto;
+  margin-left: -270px;
   margin-top: 500px;
 }
 
@@ -16,8 +17,16 @@ html, body { height: 3000px;}
   width: 50px;
   height: 50px;
   margin: 50px auto;
-  background: red;
+  background-color: red;
   margin-right: 50px;
   float: left;
   /*transition: all .05s linear;*/
+}
+
+#black .box {
+  background-color: rgba(0,0,0,0.25);
+}
+
+#green .box {
+  background-color: rgba(0,0,255,0.5);
 }

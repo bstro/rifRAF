@@ -1,4 +1,5 @@
-# define ["jquery"], ($) ->
+# ADD SUPPORT FOR BACKGROUND POSITION.
+
 class Actor
   @actors ||= {}
   @_id = 0
@@ -51,8 +52,6 @@ class Prlx extends Director
     window.requestAnimationFrame = window[prefix+"RequestAnimationFrame"]
     window.cancelAnimationFrame = window[prefix+"CancelAnimationFrame"] || window[prefix+"CancelRequestAnimationFrame"]
 
-  console.log 'prefix is', prefix
-
   prefixed_properties   =   {"border-radius": true, "transform": true, "perspective": true, "perspective-origin": true, "box-shadow": true, "background-size": true }
   modifiers             =   {"matrix": "transform", "translate": "transform", "translateX": "transform", "translateY": "transform", "scale": "transform", "scaleX": "transform", "scaleY": "transform", "rotate": "transform", "skewX": "transform", "skewY": "transform", "matrix3d": "transform", "translate3d": "transform", "translateZ": "transform", "scale3d": "transform", "scaleZ": "transform", "rotate3d": "transform", "rotateX": "transform", "rotateY": "transform", "rotateZ": "transform", "perspective": "transform"}
   document_height       =   $(document).height()
@@ -83,14 +82,14 @@ class Prlx extends Director
     adjustments = {}
 
     for k,action of actor.actions
+      # THIS DOESN'T WORK VERY WELL.
+      # Need to figure out how to make an upper/lower limit.
       delta = action.start - action.stop
       adjustment = current_el_position * delta
 
-      if modifiers[action.property]
-        if adjustments[modifiers[action.property]]
-          adjustments[modifiers[action.property]] += "#{action.property}(#{adjustment}#{action.unit or ''}) "
-        else
-          adjustments[modifiers[action.property]] = "#{action.property}(#{adjustment}#{action.unit or ''}) "
+      if (property = modifiers[action.property])
+        adjustments[property] ||= ""
+        adjustments[property] += "#{action.property}(#{adjustment}#{action.unit or ''}) "
       else
         adjustments[action.property] = "#{adjustment}#{action.unit if action.unit}"
 

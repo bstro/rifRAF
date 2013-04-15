@@ -11,4 +11,4 @@ Can be instantiated like so:
 		"translateX": "0px -150px"
 	});
 
-__Warning: the math currently doesn't work as expected. You probably shouldn't use this yet.__
+__Warning: the math for calculating the css adjustsments currently doesn't work as expected. You probably shouldn't use this yet.__

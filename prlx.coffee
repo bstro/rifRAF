@@ -64,9 +64,11 @@ class Prlx extends Director
     running               =   false
 
     elements.each -> new Actor $(@), options
+    @render(actor.el, @test(actor)) for k,actor of Actor.actors
 
     @window.on 'resize', => window_height = @window.height()
-    @window.on 'scroll', (event) =>
+
+    $(document).on 'scroll ready', (event) =>
       scroll_top = @window.scrollTop()
       scroll_bottom = scroll_top + window_height
 
@@ -77,27 +79,25 @@ class Prlx extends Director
       running = true
 
   test: (actor) ->
-    current_el_position = @yPositionOfElement.call actor.attributes
-
+    current_el_position = @clamp(@yPositionOfElement.call(actor.attributes), 0, 1)
     adjustments = {}
 
     for k,action of actor.actions
-      # THIS DOESN'T WORK VERY WELL.
-      # Need to figure out how to make an upper/lower limit.
-      delta = action.start - action.stop
-      adjustment = current_el_position * delta
+      delta = parseFloat(action.stop,10) - parseFloat(action.start,10)
+      adjustment = delta * current_el_position
 
       if (property = modifiers[action.property])
         adjustments[property] ||= ""
         adjustments[property] += "#{action.property}(#{adjustment}#{action.unit or ''}) "
       else
-        adjustments[action.property] = "#{adjustment}#{action.unit if action.unit}"
-
+        adjustments[action.property] = "#{adjustment}#{action['unit'] or ''}"
     return adjustments
 
-  render: (el, adjustments) -> el.css adjustments
+  render: (el, adjustments) ->
+    console.log 'render'
+    el.css adjustments
 
-  yPositionOfElement: ->
+  yPositionOfElement: -> # percentage of viewport
     (@el_top - scroll_top + @el_height) / (scroll_bottom - scroll_top + @el_height) # returns % of element on screen
 
   isElFullyVisible: ->
@@ -106,7 +106,11 @@ class Prlx extends Director
   isElPartiallyVisible: ->
     (scroll_bottom > @el_top > (scroll_top - @el_height))
 
+  clamp: (val, min, max) ->
+    Math.max(min, Math.min(max, val))
+
 (($) ->
-  $.fn.prlx = (options) ->
-    Prlx.getInstance($(this),options)
+  $.fn.extend
+    prlx: (options) ->
+      Prlx.getInstance($(this),options)
 )(jQuery)

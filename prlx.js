@@ -137,25 +137,30 @@
     scroll_bottom = scroll_top + window_height;
 
     function Prlx(elements, options, fn) {
-      var running,
+      var actor, k, running, _ref,
         _this = this;
       this.window = $(window);
       running = false;
       elements.each(function() {
         return new Actor($(this), options);
       });
+      _ref = Actor.actors;
+      for (k in _ref) {
+        actor = _ref[k];
+        this.render(actor.el, this.test(actor));
+      }
       this.window.on('resize', function() {
         return window_height = _this.window.height();
       });
-      this.window.on('scroll', function(event) {
+      $(document).on('scroll ready', function(event) {
         scroll_top = _this.window.scrollTop();
         scroll_bottom = scroll_top + window_height;
         if (!running) {
           requestAnimationFrame(function() {
-            var actor, k, _ref;
-            _ref = Actor.actors;
-            for (k in _ref) {
-              actor = _ref[k];
+            var _ref1;
+            _ref1 = Actor.actors;
+            for (k in _ref1) {
+              actor = _ref1[k];
               _this.render(actor.el, _this.test(actor));
             }
             return running = false;
@@ -167,24 +172,25 @@
 
     Prlx.prototype.test = function(actor) {
       var action, adjustment, adjustments, current_el_position, delta, k, property, _ref;
-      current_el_position = this.yPositionOfElement.call(actor.attributes);
+      current_el_position = this.clamp(this.yPositionOfElement.call(actor.attributes), 0, 1);
       adjustments = {};
       _ref = actor.actions;
       for (k in _ref) {
         action = _ref[k];
-        delta = action.start - action.stop;
-        adjustment = current_el_position * delta;
+        delta = parseFloat(action.stop, 10) - parseFloat(action.start, 10);
+        adjustment = delta * current_el_position;
         if ((property = modifiers[action.property])) {
           adjustments[property] || (adjustments[property] = "");
           adjustments[property] += "" + action.property + "(" + adjustment + (action.unit || '') + ") ";
         } else {
-          adjustments[action.property] = "" + adjustment + (action.unit ? action.unit : void 0);
+          adjustments[action.property] = "" + adjustment + (action['unit'] || '');
         }
       }
       return adjustments;
     };
 
     Prlx.prototype.render = function(el, adjustments) {
+      console.log('render');
       return el.css(adjustments);
     };
 
@@ -202,14 +208,20 @@
       return (scroll_bottom > (_ref = this.el_top) && _ref > (scroll_top - this.el_height));
     };
 
+    Prlx.prototype.clamp = function(val, min, max) {
+      return Math.max(min, Math.min(max, val));
+    };
+
     return Prlx;
 
   })(Director);
 
   (function($) {
-    return $.fn.prlx = function(options) {
-      return Prlx.getInstance($(this), options);
-    };
+    return $.fn.extend({
+      prlx: function(options) {
+        return Prlx.getInstance($(this), options);
+      }
+    });
   })(jQuery);
 
 }).call(this);

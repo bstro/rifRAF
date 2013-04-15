@@ -1,28 +1,27 @@
 $(function() {
-
-  $('#red .box').prlx({
-    "scale": "0.1 1.0",
-    "rotate": "120deg 360deg",
-    "translateY": "0px -150px",
-    "translateX": "0px -150px"
+  $('p').prlx({
+    "scale": "1.0 3.0",
+    // "rotate": "120deg 360deg",
+    // "translateY": "0px -150px",
+    // "translateX": "0px -150px"
     // "rotate": "5deg 1 onscreen #box2" // specifying an element triggers box1's animation only when box2 is onscreen (or 25% or 54% or w/e)
   });
 
-  $('#black .box').prlx({
-    "scale": "0.1 1.2",
-    "rotate": "120deg 375deg",
-    "translateY": "0px -140px",
-    "translateX": "0px -140px"
-    // "rotate": "5deg 1 onscreen #box2" // specifying an element triggers box1's animation only when box2 is onscreen (or 25% or 54% or w/e)
-  });
+  // $('#black .box').prlx({
+  //   "scale": "0.1 1.2",
+  //   "rotate": "120deg 375deg",
+  //   "translateY": "0px -140px",
+  //   "translateX": "0px -140px"
+  //   // "rotate": "5deg 1 onscreen #box2" // specifying an element triggers box1's animation only when box2 is onscreen (or 25% or 54% or w/e)
+  // });
 
-  $('#green .box').prlx({
-    "scale": "0.1 1.1",
-    "rotate": "120deg 480deg",
-    "translateY": "0px -145px",
-    "translateX": "0px -145px"
-    // "rotate": "5deg 1 onscreen #box2" // specifying an element triggers box1's animation only when box2 is onscreen (or 25% or 54% or w/e)
-  });
+  // $('#green .box').prlx({
+  //   "scale": "0.1 1.1",
+  //   "rotate": "120deg 480deg",
+  //   "translateY": "0px -145px",
+  //   "translateX": "0px -145px"
+  //   // "rotate": "5deg 1 onscreen #box2" // specifying an element triggers box1's animation only when box2 is onscreen (or 25% or 54% or w/e)
+  // });
 
   // $('#box1').prlx({
 

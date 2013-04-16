@@ -5,7 +5,14 @@ html, body { height: 3000px;}
   position: relative;
 }
 
+header {
+  padding-top: 1000px;
+  padding-bottom: 500px;
+  outline: 1px solid black;
+}
+
 p {
+  outline: 1px solid black;
   font-size: 24px;
   font-family: Helvetica;
 }

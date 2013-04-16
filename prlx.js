@@ -137,30 +137,35 @@
     scroll_bottom = scroll_top + window_height;
 
     function Prlx(elements, options, fn) {
-      var actor, k, running, _ref,
+      var running,
         _this = this;
       this.window = $(window);
       running = false;
       elements.each(function() {
         return new Actor($(this), options);
       });
-      _ref = Actor.actors;
-      for (k in _ref) {
-        actor = _ref[k];
-        this.render(actor.el, this.test(actor));
-      }
+      $(document).ready(function() {
+        var actor, k, _ref, _results;
+        _ref = Actor.actors;
+        _results = [];
+        for (k in _ref) {
+          actor = _ref[k];
+          _results.push(_this.render(actor.el, _this.test(actor)));
+        }
+        return _results;
+      });
       this.window.on('resize', function() {
         return window_height = _this.window.height();
       });
-      $(document).on('scroll ready', function(event) {
+      $(document).on('scroll', function(event) {
         scroll_top = _this.window.scrollTop();
         scroll_bottom = scroll_top + window_height;
         if (!running) {
           requestAnimationFrame(function() {
-            var _ref1;
-            _ref1 = Actor.actors;
-            for (k in _ref1) {
-              actor = _ref1[k];
+            var actor, k, _ref;
+            _ref = Actor.actors;
+            for (k in _ref) {
+              actor = _ref[k];
               _this.render(actor.el, _this.test(actor));
             }
             return running = false;
@@ -178,7 +183,8 @@
       for (k in _ref) {
         action = _ref[k];
         delta = parseFloat(action.stop, 10) - parseFloat(action.start, 10);
-        adjustment = delta * current_el_position;
+        adjustment = (delta * current_el_position) + parseFloat(action.start, 10);
+        console.log(current_el_position);
         if ((property = modifiers[action.property])) {
           adjustments[property] || (adjustments[property] = "");
           adjustments[property] += "" + action.property + "(" + adjustment + (action.unit || '') + ") ";
@@ -190,7 +196,6 @@
     };
 
     Prlx.prototype.render = function(el, adjustments) {
-      console.log('render');
       return el.css(adjustments);
     };
 

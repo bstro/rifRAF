@@ -64,11 +64,12 @@ class Prlx extends Director
     running               =   false
 
     elements.each -> new Actor $(@), options
-    @render(actor.el, @test(actor)) for k,actor of Actor.actors
+
+    $(document).ready => @render(actor.el, @test(actor)) for k,actor of Actor.actors
 
     @window.on 'resize', => window_height = @window.height()
 
-    $(document).on 'scroll ready', (event) =>
+    $(document).on 'scroll', (event) =>
       scroll_top = @window.scrollTop()
       scroll_bottom = scroll_top + window_height
 
@@ -84,7 +85,9 @@ class Prlx extends Director
 
     for k,action of actor.actions
       delta = parseFloat(action.stop,10) - parseFloat(action.start,10)
-      adjustment = delta * current_el_position
+      adjustment = (delta * current_el_position) + parseFloat(action.start,10)
+
+      console.log current_el_position
 
       if (property = modifiers[action.property])
         adjustments[property] ||= ""
@@ -94,7 +97,6 @@ class Prlx extends Director
     return adjustments
 
   render: (el, adjustments) ->
-    console.log 'render'
     el.css adjustments
 
   yPositionOfElement: -> # percentage of viewport

@@ -7,23 +7,25 @@ class Actor
   constructor: (@el, options) ->
     Actor._id++
     @actions ||= []
-    @attributes ||= {}
 
-    @attributes['el_height'] = @el.height()
-    @attributes['el_top'] = @el.offset().top
-
-    parseOptions = (options, collection) ->
+    parseOptions = (options, collection) =>
       for property,val of options
         args = val.match /\S+/g
         start = args[0].match /-?\d+(\.\d+)?/g # matches signed decimals
-        stop = args[1].match /-?\d+(\.\d+)?/g # matches signed decimals
         unit = args[0].match /[a-z]+/ig # matches consecutive letters
+        stop = args[1].match /-?\d+(\.\d+)?/g # matches signed decimals
+        y_start = (args[2]?.match /\d+/g) or 1
+        y_stop  = (args[3]?.match /\d+/g) or 0
 
         a = {}
-        a['property'] = property if property
-        a['start']    = start[0] if start
-        a['stop']     = stop[0] if stop
-        a['unit']     = unit[0] if unit
+        a['el_top']      =  @el.offset().top
+        a['el_height']   =  @el.height()
+        a['property']    =  property if property
+        a['start']       =  start[0] if start
+        a['stop']        =  stop[0] if stop
+        a['unit']        =  unit[0] if unit
+        a['y_start']     =  y_start[0]/100 if y_start
+        a['y_stop']      =  y_stop[0]/100 if y_stop
 
         collection.push a
 
@@ -35,7 +37,7 @@ class Actor
       @el[0].prlx_id = "c#{Actor._id}"
       parseOptions options, @actions
 
-class Director
+class Director # creates a singleton instance of Prlx. If one already exists, it just adds new actors.
   @getInstance: (elements, options, fn) ->
     if @_instance
       elements.each -> new Actor $(@), options
@@ -61,11 +63,13 @@ class Prlx extends Director
 
   constructor: (elements, options, fn) ->
     @window               =   $(window)
+    @document             =   $(document)
     running               =   false
 
     elements.each -> new Actor $(@), options
 
-    $(document).ready => @render(actor.el, @test(actor)) for k,actor of Actor.actors
+    $(document).ready =>
+      @render(actor.el, @test(actor)) for k,actor of Actor.actors
 
     @window.on 'resize', => window_height = @window.height()
 
@@ -80,14 +84,12 @@ class Prlx extends Director
       running = true
 
   test: (actor) ->
-    current_el_position = @clamp(@yPositionOfElement.call(actor.attributes), 0, 1)
     adjustments = {}
 
     for k,action of actor.actions
+      current_el_position = @clamp(@yPositionOfElement.call(action), 0, 1)
       delta = parseFloat(action.stop,10) - parseFloat(action.start,10)
       adjustment = (delta * current_el_position) + parseFloat(action.start,10)
-
-      console.log current_el_position
 
       if (property = modifiers[action.property])
         adjustments[property] ||= ""
@@ -99,17 +101,15 @@ class Prlx extends Director
   render: (el, adjustments) ->
     el.css adjustments
 
-  yPositionOfElement: -> # percentage of viewport
+  yPositionOfElement: ->
+    scroll_top = scroll_top + (@y_start*window_height) if @y_start
+    scroll_bottom = scroll_bottom - (@y_stop*window_height) if @y_stop
+
     (@el_top - scroll_top + @el_height) / (scroll_bottom - scroll_top + @el_height) # returns % of element on screen
 
-  isElFullyVisible: ->
-    ((scroll_bottom - @el_height) > @el_top > scroll_top)
-
-  isElPartiallyVisible: ->
-    (scroll_bottom > @el_top > (scroll_top - @el_height))
-
-  clamp: (val, min, max) ->
-    Math.max(min, Math.min(max, val))
+  isElFullyVisible: -> ((scroll_bottom - @el_height) > @el_top > scroll_top)
+  isElPartiallyVisible: -> (scroll_bottom > @el_top > (scroll_top - @el_height))
+  clamp: (val, min, max) -> Math.max(min, Math.min(max, val))
 
 (($) ->
   $.fn.extend

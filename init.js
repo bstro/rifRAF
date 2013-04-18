@@ -1,5 +1,5 @@
 $(function() {
-  $('p').prlx([{
+  $('p').rifraf([{
     property: 'rotate',
     start: '0deg',
     stop: '360deg',

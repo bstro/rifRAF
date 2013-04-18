@@ -46,8 +46,22 @@ class rifRAF extends Director
     return pre
 
   unless window.requestAnimationFrame
+    last_time = 0;
     window.requestAnimationFrame = window[prefix+"RequestAnimationFrame"]
     window.cancelAnimationFrame = window[prefix+"CancelAnimationFrame"] || window[prefix+"CancelRequestAnimationFrame"]
+
+    unless window.requestAnimationFrame
+      window.requestAnimationFrame = (callback, element) ->
+        currTime = new Date().getTime()
+        timeToCall = Math.max(0, 16 - (currTime - lastTime))
+        id = window.setTimeout(->
+          callback currTime + timeToCall
+        , timeToCall)
+        lastTime = currTime + timeToCall
+        id
+
+    unless window.cancelAnimationFrame
+      window.cancelAnimationFrame = (id) -> clearTimeout id
 
   prefixed_properties   =   {"border-radius": true, "transform": true, "perspective": true, "perspective-origin": true, "box-shadow": true, "background-size": true }
   modifiers             =   {"matrix": "transform", "translate": "transform", "translateX": "transform", "translateY": "transform", "scale": "transform", "scaleX": "transform", "scaleY": "transform", "rotate": "transform", "skewX": "transform", "skewY": "transform", "matrix3d": "transform", "translate3d": "transform", "translateZ": "transform", "scale3d": "transform", "scaleZ": "transform", "rotate3d": "transform", "rotateX": "transform", "rotateY": "transform", "rotateZ": "transform", "perspective": "transform"}

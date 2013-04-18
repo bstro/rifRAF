@@ -14,8 +14,8 @@ class Actor
         start = args[0].match /-?\d+(\.\d+)?/g # matches signed decimals
         unit = args[0].match /[a-z]+/ig # matches consecutive letters
         stop = args[1].match /-?\d+(\.\d+)?/g # matches signed decimals
-        y_start = (args[2]?.match /\d+/g) or 1
-        y_stop  = (args[3]?.match /\d+/g) or 0
+        y_start = (args[2]?.match /\d+/g)?[0]/100
+        y_stop  = (args[3]?.match /\d+/g)?[0]/100
 
         a = {}
         a['el_top']      =  @el.offset().top
@@ -24,8 +24,8 @@ class Actor
         a['start']       =  start[0] if start
         a['stop']        =  stop[0] if stop
         a['unit']        =  unit[0] if unit
-        a['y_start']     =  y_start[0]/100 if y_start
-        a['y_stop']      =  y_stop[0]/100 if y_stop
+        a['y_start']     =  y_start if 0 < y_start < 1.0
+        a['y_stop']      =  y_stop if 0 < y_stop < 1.0
 
         collection.push a
 
@@ -98,12 +98,11 @@ class Prlx extends Director
         adjustments[action.property] = "#{adjustment}#{action['unit'] or ''}"
     return adjustments
 
-  render: (el, adjustments) ->
-    el.css adjustments
+  render: (el, adjustments) -> el.css adjustments
 
   yPositionOfElement: ->
-    scroll_top = scroll_top + (@y_start*window_height) if @y_start
-    scroll_bottom = scroll_bottom - (@y_stop*window_height) if @y_stop
+    scroll_top = (scroll_top + ((1.0-@y_stop)*window_height) + @el_height/2) if @y_stop
+    scroll_bottom = (scroll_bottom - ((@y_start)*window_height)) if @y_start
 
     (@el_top - scroll_top + @el_height) / (scroll_bottom - scroll_top + @el_height) # returns % of element on screen
 

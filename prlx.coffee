@@ -1,4 +1,7 @@
+# ADD CALLBACK FUNCTION OPTION TO BYPASS ACTOR PARSING
+# ADD SUPPORT FOR COLOR TRANSITIONS
 # ADD SUPPORT FOR BACKGROUND POSITION.
+# ADD CUBIC BEZIER EASING FUNCTIONS
 
 class Actor
   @actors ||= {}
@@ -17,15 +20,16 @@ class Actor
         y_start = (args[2]?.match /\d+/g)?[0]/100
         y_stop  = (args[3]?.match /\d+/g)?[0]/100
 
-        a = {}
-        a['el_top']      =  @el.offset().top
-        a['el_height']   =  @el.height()
-        a['property']    =  property if property
-        a['start']       =  start[0] if start
-        a['stop']        =  stop[0] if stop
-        a['unit']        =  unit[0] if unit
-        a['y_start']     =  y_start if 0 < y_start < 1.0
-        a['y_stop']      =  y_stop if 0 < y_stop < 1.0
+        a = {
+          'el_top'      =  @el.offset().top
+          'el_height'   =  @el.height()
+          'property'    =  property if property
+          'start'       =  start[0] if start
+          'stop'        =  stop[0] if stop
+          'unit'        =  unit[0] if unit
+          'y_start'     =  y_start if 0 < y_start < 1.0
+          'y_stop'      =  y_stop if 0 < y_stop < 1.0
+        }
 
         collection.push a
 

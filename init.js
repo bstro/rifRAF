@@ -1,6 +1,6 @@
 $(function() {
   $('p').prlx({
-    "margin-left": "100px 200px",
+    "margin-left": "100px 200px 20% 50%",
     // "rotate": "120deg 360deg",
     // "translateY": "0px -150px",
     // "translateX": "0px -150px"

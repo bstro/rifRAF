@@ -8,24 +8,21 @@ class Actor
     Actor._id++
     @actions ||= []
 
-    parseOptions = (options, collection) =>
-      for property,val of options
-        args = val.match /\S+/g
-        start = args[0].match /-?\d+(\.\d+)?/g # matches signed decimals
-        unit = args[0].match /[a-z]+/ig # matches consecutive letters
-        stop = args[1].match /-?\d+(\.\d+)?/g # matches signed decimals
-        y_start = (args[2]?.match /\d+/g)?[0]/100
-        y_stop  = (args[3]?.match /\d+/g)?[0]/100
+    parseOptions = (optionsArr, collection) =>
+      for options in optionsArr
+        a = {
+          'property':      options.property,
+          'el_top':        @el.offset().top,
+          'el_height':     @el.height(),
+          'start':         (options.start?.match(/-?\d+(\.\d+)?/g))[0], # matches signed decimals
+          'stop':          (options.stop?.match(/-?\d+(\.\d+)?/g))[0], # matches signed decimals
+          'unit':          (options.start?.match(/[a-z]+/ig))?[0] or (options.stop?.match(/[a-z]+/ig))?[0], # matches consecutive letters
+          'scroll_begin':  (parseInt(options.scrollBegin)/100 if 0 < parseInt(options.scrollBegin) < 100),
+          'scroll_end':    (parseInt(options.scrollEnd)/100 if 0 < parseInt(options.scrollEnd) < 100),
+          'timing':        options.timing
+        }
 
-        a = {}
-        a['el_top']      =  @el.offset().top
-        a['el_height']   =  @el.height()
-        a['property']    =  property if property
-        a['start']       =  start[0] if start
-        a['stop']        =  stop[0] if stop
-        a['unit']        =  unit[0] if unit
-        a['y_start']     =  y_start if 0 < y_start < 1.0
-        a['y_stop']      =  y_stop if 0 < y_stop < 1.0
+        # console.log (options.scrollBegin.match(/\d+/g)[0]/100)
 
         collection.push a
 
@@ -101,8 +98,10 @@ class Prlx extends Director
   render: (el, adjustments) -> el.css adjustments
 
   yPositionOfElement: ->
-    scroll_top = (scroll_top + ((1.0-@y_stop)*window_height) + @el_height/2) if @y_stop
-    scroll_bottom = (scroll_bottom - ((@y_start)*window_height)) if @y_start
+    # console.log @
+    console.log @scroll_end, @scroll_begin
+    scroll_top = (scroll_top + ((1.0-@scroll_end)*window_height) + @el_height/2) if @scroll_end
+    scroll_bottom = (scroll_bottom - ((@scroll_begin)*window_height)) if @scroll_begin
 
     (@el_top - scroll_top + @el_height) / (scroll_bottom - scroll_top + @el_height) # returns % of element on screen
 

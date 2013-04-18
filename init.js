@@ -1,11 +1,27 @@
 $(function() {
-  $('p').prlx({
-    "margin-left": "100px 200px",
-    // "rotate": "120deg 360deg",
-    // "translateY": "0px -150px",
-    // "translateX": "0px -150px"
-    // "rotate": "5deg 1 onscreen #box2" // specifying an element triggers box1's animation only when box2 is onscreen (or 25% or 54% or w/e)
-  });
+  $('p').prlx([{
+    property: 'rotate',
+    start: '0deg',
+    stop: '360deg',
+    scrollBegin: '50%',
+    scrollEnd: '80%',
+    timing: [0.645,0.045,0.355,1]
+  }]);
+
+  // $('p').prlx([{
+  //   property: 'scale',
+  //   start: '1',
+  //   stop: '2',
+  //   scrollBegin: '0%',
+  //   scrollEnd: '0%',
+  //   timing: [0.645,0.045,0.355,1],
+  //   // trigger: $('#box');
+  //   // timing: 'ease-in-out'
+  // },{
+  //   property: 'rotate',
+  //   start: '120deg',
+  //   stop: '360deg'
+  // }]);
 
   // $('#black .box').prlx({
   //   "scale": "0.1 1.2",

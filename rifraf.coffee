@@ -11,52 +11,60 @@ class Actor
     Actor._id++
     @actions ||= []
 
-    parseOptions = (options, collection) =>
-      for property,val of options
-        args = val.match /\S+/g
-        start = args[0].match /-?\d+(\.\d+)?/g # matches signed decimals
-        unit = args[0].match /[a-z]+/ig # matches consecutive letters
-        stop = args[1].match /-?\d+(\.\d+)?/g # matches signed decimals
-        y_start = (args[2]?.match /\d+/g)?[0]/100
-        y_stop  = (args[3]?.match /\d+/g)?[0]/100
-
+    parseOptions = (optionsArr, collection) =>
+      for options in optionsArr
         a = {
-          'el_top'      =  @el.offset().top
-          'el_height'   =  @el.height()
-          'property'    =  property if property
-          'start'       =  start[0] if start
-          'stop'        =  stop[0] if stop
-          'unit'        =  unit[0] if unit
-          'y_start'     =  y_start if 0 < y_start < 1.0
-          'y_stop'      =  y_stop if 0 < y_stop < 1.0
+          'property':      options.property,
+          'el_top':        @el.offset().top,
+          'el_height':     @el.height(),
+          'start':         (options.start?.match(/-?\d+(\.\d+)?/g))[0], # matches signed decimals
+          'stop':          (options.stop?.match(/-?\d+(\.\d+)?/g))[0], # matches signed decimals
+          'unit':          (options.start?.match(/[a-z]+/ig))?[0] or (options.stop?.match(/[a-z]+/ig))?[0], # matches consecutive letters
+          'scroll_begin':  (parseInt(options.scrollBegin)/100 if 0 < parseInt(options.scrollBegin) < 100),
+          'scroll_end':    (parseInt(options.scrollEnd)/100 if 0 < parseInt(options.scrollEnd) < 100),
+          'timing':        options.timing
         }
 
         collection.push a
 
-    if Actor.actors[@el[0].prlx_id] # If actor already exists for this element
-      parseOptions options, Actor.actors[@el[0].prlx_id].actions
+    if Actor.actors[@el[0].rifraf_id] # If actor already exists for this element
+      parseOptions options, Actor.actors[@el[0].rifraf_id].actions
 
     else # If this is a new actor
       Actor.actors["c#{Actor._id}"] = @
-      @el[0].prlx_id = "c#{Actor._id}"
+      @el[0].rifraf_id = "c#{Actor._id}"
       parseOptions options, @actions
 
-class Director # creates a singleton instance of Prlx. If one already exists, it just adds new actors.
+class Director # creates a singleton instance of rifRAF. If one already exists, it just adds new actors.
   @getInstance: (elements, options, fn) ->
     if @_instance
       elements.each -> new Actor $(@), options
     else
       @_instance = new @(arguments...)
 
-class Prlx extends Director
+class rifRAF extends Director
   prefix = do -> # modified -> http://davidwalsh.name/vendor-prefix
     styles = window.getComputedStyle(document.documentElement, '')
     pre = (Array.prototype.slice.call(styles).join('').match(/-(moz|webkit|ms)-/) or (styles.OLink is '' and ['', 'o']))[1]
     return pre
 
   unless window.requestAnimationFrame
+    last_time = 0;
     window.requestAnimationFrame = window[prefix+"RequestAnimationFrame"]
     window.cancelAnimationFrame = window[prefix+"CancelAnimationFrame"] || window[prefix+"CancelRequestAnimationFrame"]
+
+    unless window.requestAnimationFrame
+      window.requestAnimationFrame = (callback, element) ->
+        currTime = new Date().getTime()
+        timeToCall = Math.max(0, 16 - (currTime - lastTime))
+        id = window.setTimeout(->
+          callback currTime + timeToCall
+        , timeToCall)
+        lastTime = currTime + timeToCall
+        id
+
+    unless window.cancelAnimationFrame
+      window.cancelAnimationFrame = (id) -> clearTimeout id
 
   prefixed_properties   =   {"border-radius": true, "transform": true, "perspective": true, "perspective-origin": true, "box-shadow": true, "background-size": true }
   modifiers             =   {"matrix": "transform", "translate": "transform", "translateX": "transform", "translateY": "transform", "scale": "transform", "scaleX": "transform", "scaleY": "transform", "rotate": "transform", "skewX": "transform", "skewY": "transform", "matrix3d": "transform", "translate3d": "transform", "translateZ": "transform", "scale3d": "transform", "scaleZ": "transform", "rotate3d": "transform", "rotateX": "transform", "rotateY": "transform", "rotateZ": "transform", "perspective": "transform"}
@@ -82,7 +90,7 @@ class Prlx extends Director
       scroll_bottom = scroll_top + window_height
 
       if not running
-        requestAnimationFrame => # => @ ~ prlx instance
+        requestAnimationFrame => # => @ ~ rifraf instance
           @render(actor.el, @test(actor)) for k,actor of Actor.actors
           running = false
       running = true
@@ -105,8 +113,9 @@ class Prlx extends Director
   render: (el, adjustments) -> el.css adjustments
 
   yPositionOfElement: ->
-    scroll_top = (scroll_top + ((1.0-@y_stop)*window_height) + @el_height/2) if @y_stop
-    scroll_bottom = (scroll_bottom - ((@y_start)*window_height)) if @y_start
+    console.log @scroll_end, @scroll_begin
+    scroll_top = (scroll_top + ((1.0-@scroll_end)*window_height) + @el_height/2) if @scroll_end
+    scroll_bottom = (scroll_bottom - ((@scroll_begin)*window_height)) if @scroll_begin
 
     (@el_top - scroll_top + @el_height) / (scroll_bottom - scroll_top + @el_height) # returns % of element on screen
 
@@ -116,6 +125,6 @@ class Prlx extends Director
 
 (($) ->
   $.fn.extend
-    prlx: (options) ->
-      Prlx.getInstance($(this),options)
+    rifraf: (options) ->
+      rifRAF.getInstance($(this),options)
 )(jQuery)

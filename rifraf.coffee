@@ -59,7 +59,6 @@ class Actor
         'timing':        options.timing
         'weight':        options.weight
       }
-      console.log 'delta is',a.delta
       collection.push a
 
 

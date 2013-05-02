@@ -1,3 +1,16 @@
+# TODO
+
+# Add cubic bezier easing
+# * Easing should complement, not override scrollBegin/End
+
+# Figure out way to recognize and animate based on existing styles;
+# especially in the case of multiple transform properties, the user
+# might wish to have a static scaled element with a animated rotation.
+
+# Make actor.parseOptions() recursive
+
+# Is there something I could do regarding the behavior at the top/bottom of the windows?
+
 prefix = do -> # modified -> http://davidwalsh.name/vendor-prefix
   styles = window.getComputedStyle(document.documentElement, '')
   pre = (Array.prototype.slice.call(styles).join('').match(/-(moz|webkit|ms)-/) or (styles.OLink is '' and ['', 'o']))[1]
@@ -31,6 +44,9 @@ class Actor
   @actors ||= {}
   @_id = 0
 
+  getActor = do ->
+    @actors
+
   constructor: (@el, options) ->
     Actor._id++
     @actions ||= []
@@ -56,8 +72,7 @@ class Actor
         'unit':          ((options.start?.match?(/[a-z]+/ig))?[0]) or (options.stop?.match?(/[a-z]+/ig))?[0] or '' # matches consecutive letters
         'scroll_begin':  (parseInt(options.scrollBegin)/100 if 0 <= parseInt(options.scrollBegin) <= 100)
         'scroll_end':    (parseInt(options.scrollEnd)/100 if 0 <= parseInt(options.scrollEnd) <= 100)
-        'timing':        options.timing
-        'weight':        options.weight
+        'easing':        options.easing
       }
       collection.push a
 
@@ -131,7 +146,6 @@ class rifRAF extends Director
   clamp: (val, min, max) -> Math.max(min, Math.min(max, val))
 
 (($) ->
-
   $.extend
     rifraf:
       add: (fn) ->

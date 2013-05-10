@@ -11,6 +11,32 @@
 
 # Is there something I could do regarding the behavior at the top/bottom of the windows?
 
+class KeySpline # https://gist.github.com/gre/1926947
+  A = (aA1, aA2) -> 1.0 - 3.0 * aA2 + 3.0 * aA1
+  B = (aA1, aA2) -> 3.0 * aA2 - 6.0 * aA1
+  C = (aA1) -> 3.0 * aA1
+  CalcBezier = (aT, aA1, aA2) -> ((A(aA1, aA2) * aT + B(aA1, aA2)) * aT + C(aA1)) * aT # Returns x(t) given t, x1, and x2, or y(t) given t, y1, and y2.
+  GetSlope = (aT, aA1, aA2) -> 3.0 * A(aA1, aA2) * aT * aT + 2.0 * B(aA1, aA2) * aT + C(aA1) # Returns dx/dt given t, x1, and x2, or dy/dt given t, y1, and y2.
+
+  constructor: (@mX1, @mY1, @mX2, @mY2) ->
+
+  get: (aX) ->
+    return aX if @mX1 is @mY1 and @mX2 is @mY2 # linear
+    CalcBezier(@getTForX(aX), @mY1, @mY2)
+
+  getTForX: (aX) ->
+    aGuessT = aX
+    i = 0
+
+    while i < 4 # Newton Raphson iteration
+      currentSlope = GetSlope(aGuessT, @mX1, @mX2)
+      return aGuessT  if currentSlope is 0.0
+      currentX = CalcBezier(aGuessT, @mX1, @mX2) - aX
+      aGuessT -= currentX / currentSlope
+      ++i
+
+    return aGuessT
+
 prefix = do -> # modified -> http://davidwalsh.name/vendor-prefix
   styles = window.getComputedStyle(document.documentElement, '')
   pre = (Array.prototype.slice.call(styles).join('').match(/-(moz|webkit|ms)-/) or (styles.OLink is '' and ['', 'o']))[1]
@@ -66,13 +92,16 @@ class Actor
         'el':            @el
         'property':      options.property
         'el_height':     @el.height()
+        'el_top':        @el.offset().top
         'start':         parseFloat((options.start?.match?(/-?\d+(\.\d+)?/g))?[0], 10) or parseFloat(options.start, 10) or 0 # matches signed decimals
         'stop':          parseFloat((options.stop?.match?(/-?\d+(\.\d+)?/g))?[0], 10) or parseFloat(options.stop, 10) or 0 # matches signed decimals
         'delta':         (parseFloat(options.stop, 10) - parseFloat(options.start, 10))
         'unit':          ((options.start?.match?(/[a-z]+/ig))?[0]) or (options.stop?.match?(/[a-z]+/ig))?[0] or '' # matches consecutive letters
         'scroll_begin':  (parseInt(options.scrollBegin)/100 if 0 <= parseInt(options.scrollBegin) <= 100)
         'scroll_end':    (parseInt(options.scrollEnd)/100 if 0 <= parseInt(options.scrollEnd) <= 100)
-        'easing':        options.easing
+        'easing':        do ->
+                          if options.easing
+                            new KeySpline options.easing[0], options.easing[1], options.easing[2], options.easing[3]
       }
       collection.push a
 
@@ -119,7 +148,11 @@ class rifRAF extends Director
     if actor?.actions
       for k,action of actor.actions
         current_el_position = @clamp(@yPositionOfActor.call(action), 0, 1)
-        adjustment = action.stop - (action.delta * current_el_position)
+
+        if action.easing
+          adjustment = action.stop - (action.delta * (action.easing.get(current_el_position)))
+        else
+          adjustment = action.stop - (action.delta * (action.easing?.get(current_el_position) or current_el_position))
 
         if (property = modifiers[action.property])
           adjustments[property] ||= ""

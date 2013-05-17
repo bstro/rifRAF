@@ -17,7 +17,7 @@ Can be instantiated like so:
 
 Supports animation on multiple CSS properties per element:
 
-    $(element).rifraf([
+    $(el).rifraf([
       {
         property: "scale",
         start: 3,

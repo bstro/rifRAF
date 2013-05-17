@@ -1,6 +1,6 @@
 #rifRAF
 
-An animation controller, syntactically-similar to CSS.
+An animation controller that uses requestAnimationFrame to animate elements as a function of the browser's scroll position.
 
 Can be instantiated like so:
 

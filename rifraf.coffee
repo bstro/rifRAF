@@ -6,6 +6,11 @@
 
 # Animate colors
 
+# Allow a callback to be specified when rifraf is instantiated like so:
+# $(element).rifraf ->
+#   property: 'margin-top'
+#   movement: -> …
+
 # Have a "horizontal" scroller mode that intercepts vertical scrolling events; variables
 # should be abstracted out to something like "dimensionSize" or something less silly.
 
@@ -29,14 +34,12 @@ class KeySpline # https://gist.github.com/gre/1926947
   getTForX: (aX) ->
     aGuessT = aX
     i = 0
-
     while i < 4 # Newton Raphson iteration
       currentSlope = GetSlope(aGuessT, @mX1, @mX2)
       return aGuessT  if currentSlope is 0.0
       currentX = CalcBezier(aGuessT, @mX1, @mX2) - aX
       aGuessT -= currentX / currentSlope
       ++i
-
     return aGuessT
 
 prefix = do -> # modified -> http://davidwalsh.name/vendor-prefix
@@ -99,7 +102,7 @@ class Actor
       a = {
         'el':            @el
         'el_height':     @el.offsetHeight
-        'el_top':        @el.offsetTop
+        'el_offset':     window.pageYOffset + @el.getBoundingClientRect().top - document.documentElement.clientTop
         'property':      options.property
         'start':         parseFloat((options.start?.match?(/-?\d+(\.\d+)?/g))?[0], 10) or parseFloat(options.start, 10) or 0 # matches signed decimals
         'stop':          parseFloat((options.stop?.match?(/-?\d+(\.\d+)?/g))?[0], 10) or parseFloat(options.stop, 10) or 0 # matches signed decimals
@@ -131,7 +134,7 @@ class rifRAF extends Director
   constructor: (elements, options, fn) ->
     running = false
 
-    @render(actor.el, @test(actor)) for k,actor of Actor.actors
+    $(document).ready => @render(actor.el, @test(actor)) for k,actor of Actor.actors
 
     window.addEventListener 'resize', => window_height = window.screen.height
 
@@ -165,17 +168,13 @@ class rifRAF extends Director
     return adjustments
 
   render: (el, adjustments) ->
-    for property,value of adjustments
-      el.style[property] = value
+    el.style[property] = value for property,value of adjustments
 
-  yPositionOfActor: (actor) -> # returns (float) percentage of element on screen
-
-    # Need to find a way to get el's offset without triggering a repaint
-    # offset = @el.getBoundingClientRect().top + scroll_top
-
+  yPositionOfActor: -> # returns (float) percentage of element on screen
     scroll_top = (scroll_top + ((1.0-@scroll_end)*window_height) + @el_height) if @scroll_end
     scroll_bottom = (scroll_bottom - ((@scroll_begin)*window_height)) if @scroll_begin
-    ($(@el).offset().top - scroll_top + @el_height) / (scroll_bottom - scroll_top + @el_height)
+
+    (@el_offset - scroll_top + @el_height) / (scroll_bottom - scroll_top + @el_height)
 
   clamp: (val, min, max) -> Math.max(min, Math.min(max, val))
 

@@ -172,8 +172,6 @@ class rifRAF extends Director
         else
           adjustments[property] = "#{adjustment}#{action['unit'] or ''}"
 
-    console.log adjustments
-
     return adjustments
 
   render: (el, adjustments) ->

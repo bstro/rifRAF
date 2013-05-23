@@ -18,6 +18,109 @@
 
 # Is there something I could do regarding the behavior at the top/bottom of the windows?
 
+class Director # creates a singleton instance of rifRAF. If one already exists, it just adds new actors.
+  @getInstance: (elements, options) ->
+    @_instance or= new @(arguments...)
+    elements.each -> new Actor @, options
+
+
+class rifRAF extends Director
+  @callbacks ||= []
+  modifiers            =   {"matrix": "transform", "translate": "transform", "translateX": "transform", "translateY": "transform", "scale": "transform", "scaleX": "transform", "scaleY": "transform", "rotate": "transform", "skewX": "transform", "skewY": "transform", "matrix3d": "transform", "translate3d": "transform", "translateZ": "transform", "scale3d": "transform", "scaleZ": "transform", "rotate3d": "transform", "rotateX": "transform", "rotateY": "transform", "rotateZ": "transform", "perspective": "transform"}
+  document_height      =   document.height
+  window_height        =   window.innerHeight
+  scroll_top           =   window.scrollY
+  scroll_bottom        =   scroll_top + window_height
+
+  constructor: (elements, options, fn) ->
+    running = false
+
+    $(document).ready => @render(actor.el, @test(actor)) for k,actor of Actor.actors
+
+    window.addEventListener 'resize', => window_height = window.screen.height
+
+    document.addEventListener 'scroll', (event) =>
+      scroll_top = window.scrollY
+      scroll_bottom = scroll_top + window_height
+
+      unless running
+        requestAnimationFrame =>
+          @render(actor.el, @test(actor)) for k,actor of Actor.actors
+          callback() for callback in rifRAF.callbacks if rifRAF.callbacks.length
+          running = false
+      running = true
+
+  test: (actor) ->
+    adjustments = {}
+
+    if actor?.actions
+      for k,action of actor.actions
+        current_el_position = @clamp(@yPositionOfActor.call(action), 0, 1)
+        adjustment = action.stop - (action.delta * (action.easing?.compute(current_el_position) or current_el_position))
+        property = get_prefix_for_property(modifiers[action.property]) or get_prefix_for_property(action.property)
+
+        if modifiers[action.property]
+          adjustments[property] ||= ""
+          adjustments[property] += "#{action.property}(#{adjustment}#{action.unit or ''}) "
+
+        else
+          adjustments[property] = "#{adjustment}#{action['unit'] or ''}"
+
+    return adjustments
+
+  render: (el, adjustments) ->
+    $(el).css adjustments
+    # el.style[property] = value for property,value of adjustments
+
+  yPositionOfActor: -> # returns (float) percentage of element on screen
+    @el_offset = window.pageYOffset + @el.getBoundingClientRect().top - document.documentElement.clientTop
+
+    scroll_top = (scroll_top + ((1.0-@scroll_end)*window_height) + @el_height) if @scroll_end
+    scroll_bottom = (scroll_bottom - ((@scroll_begin)*window_height)) if @scroll_begin
+
+    (@el_offset - scroll_top + @el_height) / (scroll_bottom - scroll_top + @el_height)
+
+  clamp: (val, min, max) -> Math.max(min, Math.min(max, val))
+
+class Actor
+  @actors ||= {}
+  @_id = 0
+
+  getActor = do ->
+    @actors
+
+  constructor: (@el, options) ->
+    Actor._id++
+    @actions ||= []
+
+    if Actor.actors[@el.rifraf_id] # If actor already exists for this element
+      @parseOptions options, Actor.actors[@el.rifraf_id].actions
+
+    else # If this is a new actor
+      Actor.actors["c#{Actor._id}"] = @
+      @el.rifraf_id = "c#{Actor._id}"
+      @parseOptions options, @actions
+
+  parseOptions: (optionsArr, collection) ->
+    # make this whole function recursive?
+    for options in optionsArr
+      a = {
+        'el':            @el
+        'el_height':     @el.offsetHeight
+        'el_offset':     window.pageYOffset + @el.getBoundingClientRect().top - document.documentElement.clientTop
+        'property':      options.property
+        'start':         parseFloat((options.start?.match?(/-?\d+(\.\d+)?/g))?[0], 10) or parseFloat(options.start, 10) or 0 # matches signed decimals
+        'stop':          parseFloat((options.stop?.match?(/-?\d+(\.\d+)?/g))?[0], 10) or parseFloat(options.stop, 10) or 0 # matches signed decimals
+        'delta':         (parseFloat(options.stop, 10) - parseFloat(options.start, 10))
+        'unit':          ((options.start?.match?(/[a-z]+/ig))?[0]) or (options.stop?.match?(/[a-z]+/ig))?[0] or '' # matches consecutive letters
+        'scroll_begin':  (parseInt(options.scrollBegin)/100 if 0 <= parseInt(options.scrollBegin) <= 100)
+        'scroll_end':    (parseInt(options.scrollEnd)/100 if 0 <= parseInt(options.scrollEnd) <= 100)
+        'easing':        do ->
+                          if options.easing
+                            new KeySpline options.easing[0], options.easing[1], options.easing[2], options.easing[3]
+      }
+      collection.push a
+
 class KeySpline # https://gist.github.com/gre/1926947
   A = (aA1, aA2) -> 1.0 - 3.0 * aA2 + 3.0 * aA1
   B = (aA1, aA2) -> 3.0 * aA2 - 6.0 * aA1
@@ -83,109 +186,6 @@ shim = do ->
 # ADD SUPPORT FOR COLOR TRANSITIONS
 # ADD SUPPORT FOR BACKGROUND POSITION.
 # ADD CUBIC BEZIER EASING FUNCTIONS
-
-class Actor
-  @actors ||= {}
-  @_id = 0
-
-  getActor = do ->
-    @actors
-
-  constructor: (@el, options) ->
-    Actor._id++
-    @actions ||= []
-
-    if Actor.actors[@el.rifraf_id] # If actor already exists for this element
-      @parseOptions options, Actor.actors[@el.rifraf_id].actions
-
-    else # If this is a new actor
-      Actor.actors["c#{Actor._id}"] = @
-      @el.rifraf_id = "c#{Actor._id}"
-      @parseOptions options, @actions
-
-  parseOptions: (optionsArr, collection) ->
-    # make this whole function recursive?
-    for options in optionsArr
-      a = {
-        'el':            @el
-        'el_height':     @el.offsetHeight
-        'el_offset':     window.pageYOffset + @el.getBoundingClientRect().top - document.documentElement.clientTop
-        'property':      options.property
-        'start':         parseFloat((options.start?.match?(/-?\d+(\.\d+)?/g))?[0], 10) or parseFloat(options.start, 10) or 0 # matches signed decimals
-        'stop':          parseFloat((options.stop?.match?(/-?\d+(\.\d+)?/g))?[0], 10) or parseFloat(options.stop, 10) or 0 # matches signed decimals
-        'delta':         (parseFloat(options.stop, 10) - parseFloat(options.start, 10))
-        'unit':          ((options.start?.match?(/[a-z]+/ig))?[0]) or (options.stop?.match?(/[a-z]+/ig))?[0] or '' # matches consecutive letters
-        'scroll_begin':  (parseInt(options.scrollBegin)/100 if 0 <= parseInt(options.scrollBegin) <= 100)
-        'scroll_end':    (parseInt(options.scrollEnd)/100 if 0 <= parseInt(options.scrollEnd) <= 100)
-        'easing':        do ->
-                          if options.easing
-                            new KeySpline options.easing[0], options.easing[1], options.easing[2], options.easing[3]
-      }
-      collection.push a
-
-
-class Director # creates a singleton instance of rifRAF. If one already exists, it just adds new actors.
-  @getInstance: (elements, options) ->
-    @_instance = new @(arguments...) unless @_instance
-    elements.each -> new Actor @, options
-
-
-class rifRAF extends Director
-  @callbacks ||= []
-  modifiers            =   {"matrix": "transform", "translate": "transform", "translateX": "transform", "translateY": "transform", "scale": "transform", "scaleX": "transform", "scaleY": "transform", "rotate": "transform", "skewX": "transform", "skewY": "transform", "matrix3d": "transform", "translate3d": "transform", "translateZ": "transform", "scale3d": "transform", "scaleZ": "transform", "rotate3d": "transform", "rotateX": "transform", "rotateY": "transform", "rotateZ": "transform", "perspective": "transform"}
-  document_height      =   document.height
-  window_height        =   window.innerHeight
-  scroll_top           =   window.scrollY
-  scroll_bottom        =   scroll_top + window_height
-
-  constructor: (elements, options, fn) ->
-    running = false
-
-    $(document).ready => @render(actor.el, @test(actor)) for k,actor of Actor.actors
-
-    window.addEventListener 'resize', => window_height = window.screen.height
-
-    document.addEventListener 'scroll', (event) =>
-      scroll_top = window.scrollY
-      scroll_bottom = scroll_top + window_height
-
-      unless running
-        requestAnimationFrame =>
-          @render(actor.el, @test(actor)) for k,actor of Actor.actors
-          callback() for callback in rifRAF.callbacks if rifRAF.callbacks.length
-          running = false
-      running = true
-
-  test: (actor) ->
-    adjustments = {}
-
-    if actor?.actions
-      for k,action of actor.actions
-        current_el_position = @clamp(@yPositionOfActor.call(action), 0, 1)
-        adjustment = action.stop - (action.delta * (action.easing?.compute(current_el_position) or current_el_position))
-        property = get_prefix_for_property(modifiers[action.property]) or get_prefix_for_property(action.property)
-
-        if modifiers[action.property]
-          adjustments[property] ||= ""
-          adjustments[property] += "#{action.property}(#{adjustment}#{action.unit or ''}) "
-
-        else
-          adjustments[property] = "#{adjustment}#{action['unit'] or ''}"
-
-    return adjustments
-
-  render: (el, adjustments) ->
-    el.style[property] = value for property,value of adjustments
-
-  yPositionOfActor: -> # returns (float) percentage of element on screen
-    @el_offset = window.pageYOffset + @el.getBoundingClientRect().top - document.documentElement.clientTop
-
-    scroll_top = (scroll_top + ((1.0-@scroll_end)*window_height) + @el_height) if @scroll_end
-    scroll_bottom = (scroll_bottom - ((@scroll_begin)*window_height)) if @scroll_begin
-
-    (@el_offset - scroll_top + @el_height) / (scroll_bottom - scroll_top + @el_height)
-
-  clamp: (val, min, max) -> Math.max(min, Math.min(max, val))
 
 (($) ->
   $.extend

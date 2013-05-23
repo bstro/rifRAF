@@ -47,9 +47,16 @@ prefix = do -> # modified -> http://davidwalsh.name/vendor-prefix
   pre = (Array.prototype.slice.call(styles).join('').match(/-(moz|webkit|ms)-/) or (styles.OLink is '' and ['', 'o']))[1]
   return pre
 
-get_prefix = (property) ->
-  _this = get_prefix
-  _this.prefixed_properties ||= {"border-radius": true, "transform": true, "perspective": true, "perspective-origin": true, "box-shadow": true, "background-size": true }
+get_prefix_for_property = (property) ->
+  _this = get_prefix_for_property
+  _this.prefixed_properties ||=
+    "border-radius": ['webkit']
+    "transform": ['webkit', 'moz', 'ms', 'o']
+    "perspective": ['webkit','moz','ms']
+    "perspective-origin": ['webkit','moz','ms']
+    "box-shadow": ['webkit']
+    "background-size": ['webkit']
+
   property = "-#{prefix}-#{property}" if _this.prefixed_properties[property]
   return property
 
@@ -156,7 +163,7 @@ class rifRAF extends Director
       for k,action of actor.actions
         current_el_position = @clamp(@yPositionOfActor.call(action), 0, 1)
         adjustment = action.stop - (action.delta * (action.easing?.compute(current_el_position) or current_el_position))
-        property = get_prefix(modifiers[action.property]) or get_prefix(action.property)
+        property = get_prefix_for_property(modifiers[action.property]) or get_prefix_for_property(action.property)
 
         if modifiers[action.property]
           adjustments[property] ||= ""
@@ -165,12 +172,16 @@ class rifRAF extends Director
         else
           adjustments[property] = "#{adjustment}#{action['unit'] or ''}"
 
+    console.log adjustments
+
     return adjustments
 
   render: (el, adjustments) ->
     el.style[property] = value for property,value of adjustments
 
   yPositionOfActor: -> # returns (float) percentage of element on screen
+    @el_offset = window.pageYOffset + @el.getBoundingClientRect().top - document.documentElement.clientTop
+
     scroll_top = (scroll_top + ((1.0-@scroll_end)*window_height) + @el_height) if @scroll_end
     scroll_bottom = (scroll_bottom - ((@scroll_begin)*window_height)) if @scroll_begin
 

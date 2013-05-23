@@ -18,15 +18,35 @@
 
 # Is there something I could do regarding the behavior at the top/bottom of the windows?
 
+modifiers =
+  "matrix": "transform"
+  "translate": "transform"
+  "translateX": "transform"
+  "translateY": "transform"
+  "scale": "transform"
+  "scaleX": "transform"
+  "scaleY": "transform"
+  "rotate": "transform"
+  "skewX": "transform"
+  "skewY": "transform"
+  "matrix3d": "transform"
+  "translate3d": "transform"
+  "translateZ": "transform"
+  "scale3d": "transform"
+  "scaleZ": "transform"
+  "rotate3d": "transform"
+  "rotateX": "transform"
+  "rotateY": "transform"
+  "rotateZ": "transform"
+  "perspective": "transform"
+
 class Director # creates a singleton instance of rifRAF. If one already exists, it just adds new actors.
   @getInstance: (elements, options) ->
     @_instance or= new @(arguments...)
     elements.each -> new Actor @, options
 
-
 class rifRAF extends Director
   @callbacks ||= []
-  modifiers            =   {"matrix": "transform", "translate": "transform", "translateX": "transform", "translateY": "transform", "scale": "transform", "scaleX": "transform", "scaleY": "transform", "rotate": "transform", "skewX": "transform", "skewY": "transform", "matrix3d": "transform", "translate3d": "transform", "translateZ": "transform", "scale3d": "transform", "scaleZ": "transform", "rotate3d": "transform", "rotateX": "transform", "rotateY": "transform", "rotateZ": "transform", "perspective": "transform"}
   document_height      =   document.height
   window_height        =   window.innerHeight
   scroll_top           =   window.scrollY
@@ -57,20 +77,19 @@ class rifRAF extends Director
       for k,action of actor.actions
         current_el_position = @clamp(@yPositionOfActor.call(action), 0, 1)
         adjustment = action.stop - (action.delta * (action.easing?.compute(current_el_position) or current_el_position))
-        property = get_prefix_for_property(modifiers[action.property]) or get_prefix_for_property(action.property)
 
         if modifiers[action.property]
-          adjustments[property] ||= ""
-          adjustments[property] += "#{action.property}(#{adjustment}#{action.unit or ''}) "
+          adjustments[action.prefixed] ||= ""
+          adjustments[action.prefixed] += "#{action.property}(#{adjustment}#{action.unit or ''}) "
 
         else
-          adjustments[property] = "#{adjustment}#{action['unit'] or ''}"
+          adjustments[action.prefixed] = "#{adjustment}#{action['unit'] or ''}"
 
     return adjustments
 
   render: (el, adjustments) ->
-    $(el).css adjustments
-    # el.style[property] = value for property,value of adjustments
+    # $(el).css adjustments
+    el.style[property] = value for property,value of adjustments
 
   yPositionOfActor: -> # returns (float) percentage of element on screen
     @el_offset = window.pageYOffset + @el.getBoundingClientRect().top - document.documentElement.clientTop
@@ -102,13 +121,18 @@ class Actor
       @parseOptions options, @actions
 
   parseOptions: (optionsArr, collection) ->
-    # make this whole function recursive?
+    # Make this whole function recursive?
     for options in optionsArr
-      a = {
+
+      # Would it be better to store the vendor prefixes here,
+      # so we can avoid calling those functions from within the
+      # rAF loop?
+      action = {
         'el':            @el
         'el_height':     @el.offsetHeight
         'el_offset':     window.pageYOffset + @el.getBoundingClientRect().top - document.documentElement.clientTop
         'property':      options.property
+        'prefixed':      get_prefix_for_property(modifiers[options.property]) or get_prefix_for_property(options.property)
         'start':         parseFloat((options.start?.match?(/-?\d+(\.\d+)?/g))?[0], 10) or parseFloat(options.start, 10) or 0 # matches signed decimals
         'stop':          parseFloat((options.stop?.match?(/-?\d+(\.\d+)?/g))?[0], 10) or parseFloat(options.stop, 10) or 0 # matches signed decimals
         'delta':         (parseFloat(options.stop, 10) - parseFloat(options.start, 10))
@@ -119,7 +143,7 @@ class Actor
                           if options.easing
                             new KeySpline options.easing[0], options.easing[1], options.easing[2], options.easing[3]
       }
-      collection.push a
+      collection.push action
 
 class KeySpline # https://gist.github.com/gre/1926947
   A = (aA1, aA2) -> 1.0 - 3.0 * aA2 + 3.0 * aA1
@@ -145,11 +169,6 @@ class KeySpline # https://gist.github.com/gre/1926947
       ++i
     return aGuessT
 
-prefix = do -> # modified -> http://davidwalsh.name/vendor-prefix
-  styles = window.getComputedStyle(document.documentElement, '')
-  pre = (Array.prototype.slice.call(styles).join('').match(/-(moz|webkit|ms)-/) or (styles.OLink is '' and ['', 'o']))[1]
-  return pre
-
 get_prefix_for_property = (property) ->
   _this = get_prefix_for_property
   _this.prefixed_properties ||=
@@ -162,6 +181,11 @@ get_prefix_for_property = (property) ->
 
   property = "-#{prefix}-#{property}" if _this.prefixed_properties[property]
   return property
+
+prefix = do -> # modified -> http://davidwalsh.name/vendor-prefix
+  styles = window.getComputedStyle(document.documentElement, '')
+  pre = (Array.prototype.slice.call(styles).join('').match(/-(moz|webkit|ms)-/) or (styles.OLink is '' and ['', 'o']))[1]
+  return pre
 
 shim = do ->
   unless window.requestAnimationFrame

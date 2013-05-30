@@ -1,46 +1,18 @@
-# TODO
+(($) ->
+  $.extend
+    rifraf:
+      add: (fn) ->
+        rifRAF.callbacks.push fn # adds arbitrary functions to be ran inside rifRAF's RAF callback. Not sure if this is actually optimizing anything.
 
-# Figure out way to recognize and animate based on existing styles;
-# especially in the case of multiple transform properties, the user
-# might wish to have a static scaled element with a animated rotation.
+  $.fn.extend
+    rifraf: (options) ->
+      rifRAF.getInstance($(this),options)
 
-# Animate colors
+)(jQuery)
 
-# Allow a callback to be specified when rifraf is instantiated like so:
-# $(element).rifraf ->
-#   property: 'margin-top'
-#   movement: -> …
-
-# Have a "horizontal" scroller mode that intercepts vertical scrolling events; variables
-# should be abstracted out to something like "dimensionSize" or something less silly.
-
-# Make actor.parseOptions() recursive
-
-# Is there something I could do regarding the behavior at the top/bottom of the windows?
-
-modifiers =
-  "matrix": "transform"
-  "translate": "transform"
-  "translateX": "transform"
-  "translateY": "transform"
-  "scale": "transform"
-  "scaleX": "transform"
-  "scaleY": "transform"
-  "rotate": "transform"
-  "skewX": "transform"
-  "skewY": "transform"
-  "matrix3d": "transform"
-  "translate3d": "transform"
-  "translateZ": "transform"
-  "scale3d": "transform"
-  "scaleZ": "transform"
-  "rotate3d": "transform"
-  "rotateX": "transform"
-  "rotateY": "transform"
-  "rotateZ": "transform"
-  "perspective": "transform"
-
-class Director # creates a singleton instance of rifRAF. If one already exists, it just adds new actors.
+class Director
+  # Creates a singleton instance of rifRAF. If one already exists, it just adds new actors.
+  # I keep forgetting how this works; probably needs to be refactored.
   @getInstance: (elements, options) ->
     @_instance or= new @(arguments...)
     elements.each -> new Actor @, options
@@ -88,12 +60,11 @@ class rifRAF extends Director
     return adjustments
 
   render: (el, adjustments) ->
-    # $(el).css adjustments
-    el.style[property] = value for property,value of adjustments
+    $(el).css adjustments
+    # el.style[property] = value for property,value of adjustments
 
   yPositionOfActor: -> # returns (float) percentage of element on screen
-    @el_offset = window.pageYOffset + @el.getBoundingClientRect().top - document.documentElement.clientTop
-
+    @el_offset = window.pageYOffset + @ref.getBoundingClientRect().top - document.documentElement.clientTop
     scroll_top = (scroll_top + ((1.0-@scroll_end)*window_height) + @el_height) if @scroll_end
     scroll_bottom = (scroll_bottom - ((@scroll_begin)*window_height)) if @scroll_begin
 
@@ -121,14 +92,10 @@ class Actor
       @parseOptions options, @actions
 
   parseOptions: (optionsArr, collection) ->
-    # Make this whole function recursive?
     for options in optionsArr
-
-      # Would it be better to store the vendor prefixes here,
-      # so we can avoid calling those functions from within the
-      # rAF loop?
       action = {
         'el':            @el
+        'ref':           options.relativeTo?[0] or @el
         'el_height':     @el.offsetHeight
         'el_offset':     window.pageYOffset + @el.getBoundingClientRect().top - document.documentElement.clientTop
         'property':      options.property
@@ -137,12 +104,11 @@ class Actor
         'stop':          parseFloat((options.stop?.match?(/-?\d+(\.\d+)?/g))?[0], 10) or parseFloat(options.stop, 10) or 0 # matches signed decimals
         'delta':         (parseFloat(options.stop, 10) - parseFloat(options.start, 10))
         'unit':          ((options.start?.match?(/[a-z]+/ig))?[0]) or (options.stop?.match?(/[a-z]+/ig))?[0] or '' # matches consecutive letters
-        'scroll_begin':  (parseInt(options.scrollBegin)/100 if 0 <= parseInt(options.scrollBegin) <= 100)
-        'scroll_end':    (parseInt(options.scrollEnd)/100 if 0 <= parseInt(options.scrollEnd) <= 100)
-        'easing':        do ->
-                          if options.easing
-                            new KeySpline options.easing[0], options.easing[1], options.easing[2], options.easing[3]
+        'scroll_begin':  (parseInt(options.scrollBegin, 10)/100 if 0 <= parseInt(options.scrollBegin, 10) <= 100)
+        'scroll_end':    (parseInt(options.scrollEnd, 10)/100 if 0 <= parseInt(options.scrollEnd, 10) <= 100)
+        'easing':        do -> new KeySpline options.easing[0], options.easing[1], options.easing[2], options.easing[3] if options.easing
       }
+      console.log action
       collection.push action
 
 class KeySpline # https://gist.github.com/gre/1926947
@@ -163,7 +129,7 @@ class KeySpline # https://gist.github.com/gre/1926947
     i = 0
     while i < 4 # Newton Raphson iteration
       currentSlope = GetSlope(aGuessT, @mX1, @mX2)
-      return aGuessT  if currentSlope is 0.0
+      return aGuessT if currentSlope is 0.0
       currentX = CalcBezier(aGuessT, @mX1, @mX2) - aX
       aGuessT -= currentX / currentSlope
       ++i
@@ -206,19 +172,24 @@ shim = do ->
     unless window.cancelAnimationFrame
       window.cancelAnimationFrame = (id) -> clearTimeout id
 
-# ADD CALLBACK FUNCTION OPTION TO BYPASS ACTOR PARSING
-# ADD SUPPORT FOR COLOR TRANSITIONS
-# ADD SUPPORT FOR BACKGROUND POSITION.
-# ADD CUBIC BEZIER EASING FUNCTIONS
-
-(($) ->
-  $.extend
-    rifraf:
-      add: (fn) ->
-        rifRAF.callbacks.push fn # adds arbitrary functions to be ran inside rifRAF's RAF callback. Not sure if this is actually optimizing anything.
-
-  $.fn.extend
-    rifraf: (options) ->
-      rifRAF.getInstance($(this),options)
-
-)(jQuery)
+modifiers =
+  "matrix"      :  "transform"
+  "translate"   :  "transform"
+  "translateX"  :  "transform"
+  "translateY"  :  "transform"
+  "scale"       :  "transform"
+  "scaleX"      :  "transform"
+  "scaleY"      :  "transform"
+  "rotate"      :  "transform"
+  "skewX"       :  "transform"
+  "skewY"       :  "transform"
+  "matrix3d"    :  "transform"
+  "translate3d" :  "transform"
+  "translateZ"  :  "transform"
+  "scale3d"     :  "transform"
+  "scaleZ"      :  "transform"
+  "rotate3d"    :  "transform"
+  "rotateX"     :  "transform"
+  "rotateY"     :  "transform"
+  "rotateZ"     :  "transform"
+  "perspective" :  "transform"

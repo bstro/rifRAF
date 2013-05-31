@@ -91,14 +91,13 @@ class Actor
   parseOptions: (optionsArr, collection) ->
     for options in optionsArr
       ref = options.relativeTo?[0] or @el
-
       action = {
         'el':            @el
         'ref':           ref
         'el_height':     ref.offsetHeight
         'el_offset':     window.pageYOffset + ref.getBoundingClientRect().top - document.documentElement.clientTop
         'property':      options.property
-        'prefixed':      get_prefix_for_property(modifiers[options.property]) or get_prefix_for_property(options.property)
+        'prefixed':      get_prefix_for_property(modifiers[options.property] or options.property)
         'start':         parseFloat((options.start?.match?(/-?\d+(\.\d+)?/g))?[0], 10) or parseFloat(options.start, 10) or 0 # matches signed decimals
         'stop':          parseFloat((options.stop?.match?(/-?\d+(\.\d+)?/g))?[0], 10) or parseFloat(options.stop, 10) or 0 # matches signed decimals
         'delta':         (parseFloat(options.stop, 10) - parseFloat(options.start, 10))
@@ -107,7 +106,6 @@ class Actor
         'scroll_end':    (parseInt(options.scrollEnd, 10)/100 if 0 <= parseInt(options.scrollEnd, 10) <= 100)
         'easing':        do -> new KeySpline options.easing[0], options.easing[1], options.easing[2], options.easing[3] if options.easing
       }
-
       collection.push action
 
 class KeySpline # https://gist.github.com/gre/1926947

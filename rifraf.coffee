@@ -76,7 +76,6 @@ class Actor
   @actors ||= {}
   @_id = 0
 
-
   constructor: (@el, options) ->
     Actor._id++
     @actions ||= []

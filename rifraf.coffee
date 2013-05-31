@@ -108,7 +108,6 @@ class Actor
         'scroll_end':    (parseInt(options.scrollEnd, 10)/100 if 0 <= parseInt(options.scrollEnd, 10) <= 100)
         'easing':        do -> new KeySpline options.easing[0], options.easing[1], options.easing[2], options.easing[3] if options.easing
       }
-      console.log action
       collection.push action
 
 class KeySpline # https://gist.github.com/gre/1926947

@@ -76,8 +76,6 @@ class Actor
   @actors ||= {}
   @_id = 0
 
-  getActor = do ->
-    @actors
 
   constructor: (@el, options) ->
     Actor._id++
@@ -93,11 +91,13 @@ class Actor
 
   parseOptions: (optionsArr, collection) ->
     for options in optionsArr
+      ref = options.relativeTo?[0] or @el
+
       action = {
         'el':            @el
-        'ref':           options.relativeTo?[0] or @el
-        'el_height':     @el.offsetHeight
-        'el_offset':     window.pageYOffset + @el.getBoundingClientRect().top - document.documentElement.clientTop
+        'ref':           ref
+        'el_height':     ref.offsetHeight
+        'el_offset':     window.pageYOffset + ref.getBoundingClientRect().top - document.documentElement.clientTop
         'property':      options.property
         'prefixed':      get_prefix_for_property(modifiers[options.property]) or get_prefix_for_property(options.property)
         'start':         parseFloat((options.start?.match?(/-?\d+(\.\d+)?/g))?[0], 10) or parseFloat(options.start, 10) or 0 # matches signed decimals

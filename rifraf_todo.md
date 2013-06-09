@@ -1,6 +1,6 @@
 # RifRAF TODO
-## updated 5-30-13
 
+__updated 5-30-13__
 * -Add support for relative movement.-
 * Color transitions.
 * Gradient transitions

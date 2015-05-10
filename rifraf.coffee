@@ -49,6 +49,7 @@ class rifRAF extends Director
       for k,action of actor.actions
         current_el_position = @clamp(@yPositionOfActor.call(action), 0, 1)
         adjustment = action.stop - (action.delta * (action.easing?.compute(current_el_position) or current_el_position))
+        adjustment = parseInt(adjustment * 100, 10) / 100;
 
         if modifiers[action.property]
           adjustments[action.prefixed] ||= ""
@@ -135,6 +136,7 @@ class KeySpline # https://gist.github.com/gre/1926947
 get_prefix_for_property = (property) ->
   _this = get_prefix_for_property
   _this.prefixed_properties ||=
+    "filter": ['webkit', 'moz', 'ms', 'o']
     "border-radius": ['webkit']
     "transform": ['webkit', 'moz', 'ms', 'o']
     "perspective": ['webkit','moz','ms']
@@ -170,6 +172,14 @@ shim = do ->
       window.cancelAnimationFrame = (id) -> clearTimeout id
 
 modifiers =
+  "blur"        :  "filter"
+  "grayscale"   :  "filter"
+  "sepia"       :  "filter"
+  "brightness"  :  "filter"
+  "constrast"   :  "filter"
+  "hue-rotate"  :  "filter"
+  "invert"      :  "filter"
+  "saturate"    :  "filter"
   "matrix"      :  "transform"
   "translate"   :  "transform"
   "translateX"  :  "transform"
